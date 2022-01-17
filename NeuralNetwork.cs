@@ -1,4 +1,7 @@
-﻿namespace AI
+﻿using System;
+using System.Collections.Generic;
+
+namespace AI
 {
     public class NeuralNetwork
     {
@@ -110,70 +113,80 @@
                 new() { new() { 0, 1 }, new() { 1 } },
                 new() { new() { 1, 0 }, new() { 1 } }
             };
-
-            List<List<double>> outputs = new();
-            for (int i = 0; i < expectations.Count; i++)
+            for (int epoch = 0; epoch < 600; epoch++)
             {
-                outputs.Add(SetInputs(expectations[i][0]).Update());
-            }
 
-            List<List<double>> errors = new();
-            List<List<double>> dErrors = new();
-            for (int i = 0; i < outputs.Count; i++)
-            {
-                errors.Add(new());
-                dErrors.Add(new());
-                for (int j = 0; j < outputs[i].Count; j++)
+                List<List<double>> outputs = new();
+                for (int i = 0; i < expectations.Count; i++)
                 {
-                    errors[i].Add(Math.Pow(outputs[i][j] - expectations[i][1][j], 2) / 2);
-                    dErrors[i].Add(outputs[i][j] - expectations[i][1][j]);
+                    outputs.Add(SetInputs(expectations[i][0]).Update());
                 }
-            }
 
-            for (int i = Layers.Count - 1; i >= 0; i--)
-            {
-                Layers[i].WeightsErrors.Clear();
-                Layers[i].NodesErrors.Clear();
-
-                for (int j = 0; j < Layers[i].NeuronsNumber; j++)
+                List<List<double>> errors = new();
+                List<List<double>> dErrors = new();
+                for (int i = 0; i < outputs.Count; i++)
                 {
-                    if (i == Layers.Count - 1)
+                    errors.Add(new());
+                    dErrors.Add(new());
+                    for (int j = 0; j < outputs[i].Count; j++)
                     {
-                        Layers[i].NodesErrors.Add(dErrors[0][j] * Layers[i].Derivatives[j]);
+                        errors[i].Add(Math.Pow(outputs[i][j] - expectations[i][1][j], 2) / 2);
+                        dErrors[i].Add(outputs[i][j] - expectations[i][1][j]);
                     }
-                    else
-                    {
-                        double sum = 0;
+                }
+                for (int i = Layers.Count - 1; i >= 0; i--)
+                {
+                    Layers[i].WeightsErrors.Clear();
+                    Layers[i].NodesErrors.Clear();
 
-                        for (int k = 0; k < Layers[i + 1].NeuronsNumber; k++)
+                    for (int j = 0; j < Layers[i].NeuronsNumber; j++)
+                    {
+                        if (i == Layers.Count - 1)
                         {
-                            sum += Layers[i + 1].NodesErrors[k] * Layers[i + 1].Weights[k][j];
+                            Layers[i].NodesErrors.Add(dErrors[0][j] * Layers[i].Derivatives[j]);
+                        }
+                        else if (i != 0)
+                        {
+                            double sum = 0;
+
+                            for (int k = 0; k < Layers[i + 1].NeuronsNumber; k++)
+                            {
+                                sum += Layers[i + 1].NodesErrors[k] * Layers[i + 1].Weights[k][j];
+                            }
+
+                            Layers[i].NodesErrors.Add(sum * Layers[i].Derivatives[j]);
                         }
 
-                        Console.WriteLine(sum * Layers[i].Derivatives[j]);
-                        Layers[i].NodesErrors.Add(sum * Layers[i].Derivatives[j]);
+                        if (i != 0)
+                        {
+                            Layers[i].WeightsErrors.Add(new());
+
+                            for (int k = 0; k < Layers[i].LastLayerNeuronsNumber; k++)
+                            {
+                                Layers[i].WeightsErrors[j].Add(Layers[i].NodesErrors[j] * Layers[i - 1].Outputs[k]);
+                            }
+                        }
                     }
+                }
 
-                    if (i != 0)
+                for (int i = 1; i < Layers.Count; i++)
+                {
+                    for (int j = 0; j < Layers[i].NeuronsNumber; j++)
                     {
-                        Layers[i].WeightsErrors.Add(new());
-
                         for (int k = 0; k < Layers[i].LastLayerNeuronsNumber; k++)
                         {
-                            Layers[i].WeightsErrors[j].Add(Layers[i].NodesErrors[j] * Layers[i - 1].Outputs[k]);
+                            Layers[i].Weights[j][k] -= Layers[i].WeightsErrors[j][k] * LearningRate;
                         }
                     }
                 }
-            }
 
-            for (int i = 1; i < Layers.Count; i++)
-            {
-                for (int j = 0; j < Layers[i].NeuronsNumber; j++)
+                if (epoch % 100 == 0)
                 {
-                    for (int k = 0; k < Layers[i].LastLayerNeuronsNumber; k++)
-                    {
-                        Layers[i].Weights[j][k] -= Layers[i].WeightsErrors[j][k] * LearningRate;
-                    }
+                    Console.WriteLine(outputs[0][0]);
+                    Console.WriteLine(outputs[1][0]);
+                    Console.WriteLine(outputs[2][0]);
+                    Console.WriteLine(outputs[3][0]);
+                    Console.WriteLine();
                 }
             }
 
@@ -223,7 +236,7 @@
             for (int i = 0; i < neuronsNumber; i++)
             {
                 Weights.Add(new List<double>());
-                Biases.Add(random.NextDouble());
+                Biases.Add(0); // Temporarly disabled bias
                 for (int j = 0; j < lastLayerNeuronsNumber; j++)
                 {
                     Weights[i].Add(random.NextDouble());

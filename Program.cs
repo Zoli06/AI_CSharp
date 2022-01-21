@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace AI
+﻿namespace AI
 {
     class Program
     {

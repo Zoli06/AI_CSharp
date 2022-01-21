@@ -5,19 +5,13 @@
         public List<Layer> Layers { get; set; }
         public double LearningRate;
 
-        public List<double> GetInputs()
+        public double[] GetInputs()
         {
-            List<double> inputs = new();
-            for (int i = 0; i < Layers[0].NeuronsNumber; i++)
-            {
-                inputs.Add(Layers[0].Outputs[i]);
-            }
-            return inputs;
+            return Layers[0].Outputs;
         }
 
         public double GetInputs(int i)
         {
-
             return Layers[0].Outputs[i];
         }
 

@@ -10,20 +10,6 @@
             var asd2 = new NeuralNetwork(dimensions, ActivationTypes.TANH, 0.1);
             asd2.BackPropagate().SetInputs(inputs).Update();
             Console.WriteLine(asd2.ToString());
-
-            //asd2.BackPropagation();
-            //asd2.SetInputs(new() { 0, 1 });
-            //asd2.Calculate();
-            //Console.WriteLine(asd2.ToString());
-            //asd2.SetInputs(new() { 1, 0 });
-            //asd2.Calculate();
-            //Console.WriteLine(asd2.ToString());
-            //asd2.SetInputs(new() { 0, 0 });
-            //asd2.Calculate();
-            //Console.WriteLine(asd2.ToString());
-            //asd2.SetInputs(new() { 1, 1 });
-            //asd2.Calculate();
-            //Console.WriteLine(asd2.ToString());
         }
     }
 }

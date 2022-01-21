@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace AI
+﻿namespace AI
 {
     public class NeuralNetwork
     {
@@ -24,7 +21,7 @@ namespace AI
             return Layers[0].Outputs[i];
         }
 
-        public NeuralNetwork SetInputs(List<double> inputs)
+        public NeuralNetwork SetInputs(double[] inputs)
         {
             Layers[0].Outputs = inputs;
 
@@ -90,7 +87,7 @@ namespace AI
             }
         }
 
-        public List<double> Update()
+        public double[] Update()
         {
             // Skip input layer
             for (int i = 1; i < Layers.Count; i++)
@@ -106,64 +103,54 @@ namespace AI
             // Only trains for first pattern
             // TODO: you know..
 
-            List<List<List<double>>> expectations = new()
+            double[,][] expectations =
             {
-                new() { new() { 0, 0 }, new() { 0 } },
-                new() { new() { 1, 1 }, new() { 0 } },
-                new() { new() { 0, 1 }, new() { 1 } },
-                new() { new() { 1, 0 }, new() { 1 } }
+                { new double[] { 0.0, 1.0 }, new double[] { 0.7 } },
+                { new double[] { 0.0, 0.0 }, new double[] { 0.7 } },
+                { new double[] { 1.0, 1.0 }, new double[] { 1.0 } },
+                { new double[] { 0.0, 0.4 }, new double[] { 1.0 } },
             };
+
             for (int epoch = 0; epoch < 600; epoch++)
             {
+                double[] outputs = SetInputs(expectations[0, 0]).Update();
 
-                List<List<double>> outputs = new();
-                for (int i = 0; i < expectations.Count; i++)
+                double[] errors = new double[outputs.Length];
+                double[] dErrors = new double[outputs.Length];
+                for (int i = 0; i < outputs.GetLength(0); i++)
                 {
-                    outputs.Add(SetInputs(expectations[i][0]).Update());
+                    errors[i] = Math.Pow(outputs[i] - expectations[i, 1][0], 2) / 2;
+                    dErrors[i] = outputs[i] - expectations[i, 1][0];
                 }
 
-                List<List<double>> errors = new();
-                List<List<double>> dErrors = new();
-                for (int i = 0; i < outputs.Count; i++)
-                {
-                    errors.Add(new());
-                    dErrors.Add(new());
-                    for (int j = 0; j < outputs[i].Count; j++)
-                    {
-                        errors[i].Add(Math.Pow(outputs[i][j] - expectations[i][1][j], 2) / 2);
-                        dErrors[i].Add(outputs[i][j] - expectations[i][1][j]);
-                    }
-                }
                 for (int i = Layers.Count - 1; i >= 0; i--)
                 {
-                    Layers[i].WeightsErrors.Clear();
-                    Layers[i].NodesErrors.Clear();
+                    Array.Clear(Layers[i].WeightsDeltas, 0, Layers[i].WeightsDeltas.Length);
+                    Array.Clear(Layers[i].NodesDeltas, 0, Layers[i].NodesDeltas.Length);
 
                     for (int j = 0; j < Layers[i].NeuronsNumber; j++)
                     {
                         if (i == Layers.Count - 1)
                         {
-                            Layers[i].NodesErrors.Add(dErrors[0][j] * Layers[i].Derivatives[j]);
+                            Layers[i].NodesDeltas[j] = dErrors[j] * Layers[i].Derivatives[j];
                         }
                         else if (i != 0)
                         {
-                            double sum = 0;
+                            double sum = 0.0;
 
                             for (int k = 0; k < Layers[i + 1].NeuronsNumber; k++)
                             {
-                                sum += Layers[i + 1].NodesErrors[k] * Layers[i + 1].Weights[k][j];
+                                sum += Layers[i + 1].NodesDeltas[k] * Layers[i + 1].Weights[k, j];
                             }
 
-                            Layers[i].NodesErrors.Add(sum * Layers[i].Derivatives[j]);
+                            Layers[i].NodesDeltas[j] = sum * Layers[i].Derivatives[j];
                         }
 
                         if (i != 0)
                         {
-                            Layers[i].WeightsErrors.Add(new());
-
                             for (int k = 0; k < Layers[i].LastLayerNeuronsNumber; k++)
                             {
-                                Layers[i].WeightsErrors[j].Add(Layers[i].NodesErrors[j] * Layers[i - 1].Outputs[k]);
+                                Layers[i].WeightsDeltas[j, k] = Layers[i].NodesDeltas[j] * Layers[i - 1].Outputs[k];
                             }
                         }
                     }
@@ -175,17 +162,16 @@ namespace AI
                     {
                         for (int k = 0; k < Layers[i].LastLayerNeuronsNumber; k++)
                         {
-                            Layers[i].Weights[j][k] -= Layers[i].WeightsErrors[j][k] * LearningRate;
+                            Layers[i].Weights[j, k] -= Layers[i].WeightsDeltas[j, k] * LearningRate;
                         }
+
+                        Layers[i].Biases[j] = Layers[i].NodesDeltas[j] * LearningRate;
                     }
                 }
 
                 if (epoch % 100 == 0)
                 {
-                    Console.WriteLine(outputs[0][0]);
-                    Console.WriteLine(outputs[1][0]);
-                    Console.WriteLine(outputs[2][0]);
-                    Console.WriteLine(outputs[3][0]);
+                    Console.WriteLine(outputs[0]);
                     Console.WriteLine();
                 }
             }
@@ -207,67 +193,73 @@ namespace AI
 
     public class Layer
     {
-        public List<List<double>> Weights { get; set; } = new();
-        public List<double> Biases { get; set; } = new();
-        public List<double> Outputs { get; set; } = new();
-        public List<double> Derivatives { get; set; } = new();
-        public List<List<double>> WeightsErrors { get; set; } = new();
-        public List<double> NodesErrors { get; set; } = new();
+        public double[,] Weights { get; set; }
+        public double[] Biases { get; set; }
+        public double[] Outputs { get; set; }
+        public double[] Derivatives { get; set; }
+        public double[,] WeightsDeltas { get; set; }
+        public double[] NodesDeltas { get; set; }
         ActivationTypes ActivationType { get; set; }
         public int NeuronsNumber
         {
             get
             {
-                return Weights.Count;
+                return Weights.GetLength(0);
             }
         }
         public int LastLayerNeuronsNumber
         {
             get
             {
-                return Weights[0].Count;
+                return Weights.GetLength(1);
             }
         }
 
         public Layer(int neuronsNumber, int lastLayerNeuronsNumber, ActivationTypes activationType)
         {
+            Weights = new double[neuronsNumber, lastLayerNeuronsNumber];
+            Biases = new double[neuronsNumber];
+            Outputs = new double[neuronsNumber];
+            Derivatives = new double[neuronsNumber];
+            WeightsDeltas = new double[neuronsNumber, lastLayerNeuronsNumber];
+            NodesDeltas = new double[neuronsNumber];
+
             Random random = new Random();
 
             for (int i = 0; i < neuronsNumber; i++)
             {
-                Weights.Add(new List<double>());
-                Biases.Add(0); // Temporarly disabled bias
+                Biases[i] = 0.0;
                 for (int j = 0; j < lastLayerNeuronsNumber; j++)
                 {
-                    Weights[i].Add(random.NextDouble());
+                    Weights[i, j] = random.NextDouble();
                 }
             }
 
             ActivationType = activationType;
         }
 
-        public List<double> Update(List<double> inputs)
+        public double[] Update(double[] inputs)
         {
-            if (inputs.Count != LastLayerNeuronsNumber)
+            if (inputs.GetLength(0) != LastLayerNeuronsNumber)
             {
                 throw new Exception("Inputs number must be equal to LastLayerNeuronsNumber");
             }
 
-            Outputs.Clear();
-            Derivatives.Clear();
+            Array.Clear(Outputs, 0, Outputs.Length);
+            Array.Clear(Derivatives, 0, Derivatives.Length);
 
-            for (int i = 0; i < Weights.Count; i++)
+            for (int i = 0; i < NeuronsNumber; i++)
             {
-                Outputs.Add(0);
-                for (int j = 0; j < Weights[i].Count; j++)
+                Outputs[i] = 0.0;
+                for (int j = 0; j < LastLayerNeuronsNumber; j++)
                 {
-                    Outputs[i] += inputs[j] * Weights[i][j];
+                    Outputs[i] += inputs[j] * Weights[i, j];
                 }
                 Outputs[i] += Biases[i];
 
                 Outputs[i] = Activate(Outputs[i]);
 
-                Derivatives.Add(Outputs[i] * (1 - Outputs[i]));
+                Derivatives[i] = Outputs[i] * (1 - Outputs[i]);
             }
 
             return Outputs;
@@ -286,6 +278,20 @@ namespace AI
             }
         }
 
+        public void AddNoise()
+        {
+            Random random = new Random();
+
+            for (int i = 0; i < NeuronsNumber; i++)
+            {
+                Biases[i] += random.NextDouble() * 2 - 1;
+                for (int j = 0; j < LastLayerNeuronsNumber; j++)
+                {
+                    Weights[i, j] += random.NextDouble() * 2 - 1;
+                }
+            }
+        }
+
         public override string ToString()
         {
             string str = "";
@@ -293,9 +299,9 @@ namespace AI
             for (int i = 0; i < NeuronsNumber; i++)
             {
                 string _weights = "(";
-                for (int j = 0; j < Weights[i].Count; j++)
+                for (int j = 0; j < LastLayerNeuronsNumber; j++)
                 {
-                    _weights += $"{Weights[i][j]}, ";
+                    _weights += $"{Weights[i, j]}, ";
                 }
                 _weights += ")";
 
@@ -322,7 +328,7 @@ namespace AI
         {
             public static int Default(double value)
             {
-                return Convert.ToInt32(value >= 0);
+                return Convert.ToInt32(value >= 0.0);
             }
 
             public static double Derivative(double value)
@@ -348,12 +354,12 @@ namespace AI
         {
             public static double Default(double value)
             {
-                return 1.0f / (1.0f + (float)Math.Exp(-value));
+                return 1.0 / (1.0 + Math.Exp(-value));
             }
 
             public static double Derivative(double value)
             {
-                return Math.Exp(-value) / Math.Pow(1 + Math.Exp(-value), 2.0f);
+                return Math.Exp(-value) / Math.Pow(1 + Math.Exp(-value), 2.0);
             }
         }
 
@@ -381,63 +387,6 @@ namespace AI
             {
                 throw new NotImplementedException();
             }
-        }
-    }
-
-    public class Train
-    {
-        public static int localMinUtil(List<double> arr, int low, int high, int n)
-        {
-
-            // Find index of middle element
-            int mid = low + (high - low) / 2;
-
-            // Compare middle element with its neighbours
-            // (if neighbours exist)
-            if (mid == 0 || arr[mid - 1] > arr[mid] &&
-               mid == n - 1 || arr[mid] < arr[mid + 1])
-                return mid;
-
-            // If middle element is not minima and its left
-            // neighbour is smaller than it, then left half
-            // must have a local minima.
-            else if (mid > 0 && arr[mid - 1] < arr[mid])
-                return localMinUtil(arr, low, mid - 1, n);
-
-            // If middle element is not minima and its right
-            // neighbour is smaller than it, then right half
-            // must have a local minima.
-            return localMinUtil(arr, mid + 1, high, n);
-        }
-
-        public static int localMinUtil2(List<double> arr, int low, int high, int n)
-        {
-
-            // Find index of middle element
-            int mid = low + (high - low) / 2;
-
-            // Compare middle element with its neighbours
-            // (if neighbours exist)
-            if (mid == 0 || arr[mid - 1] > arr[mid] &&
-               mid == n - 1 || arr[mid] < arr[mid + 1])
-                return mid;
-
-            // If middle element is not minima and its left
-            // neighbour is smaller than it, then left half
-            // must have a local minima.
-            else if (mid > 0 && arr[mid - 1] < arr[mid])
-                return localMinUtil(arr, low, mid - 1, n);
-
-            // If middle element is not minima and its right
-            // neighbour is smaller than it, then right half
-            // must have a local minima.
-            return localMinUtil(arr, mid + 1, high, n);
-        }
-
-        // A wrapper over recursive function localMinUtil()
-        public static int localMin(List<double> arr, int n)
-        {
-            return localMinUtil(arr, 0, n - 1, n);
         }
     }
 }

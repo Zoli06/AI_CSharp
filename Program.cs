@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Diagnostics;
 
 namespace AI
 {
@@ -7,11 +6,13 @@ namespace AI
     {
         static void Main(string[] args)
         {
+
             List<int> dimensions = new() { 2, 3, 1 };
-            List<double> inputs = new() { 0, 1 };
+            double[] inputs = { 0.0, 1.0 };
             var asd2 = new NeuralNetwork(dimensions, ActivationTypes.TANH, 0.1);
-            asd2.BackPropagate().Update();
+            asd2.BackPropagate().SetInputs(inputs).Update();
             Console.WriteLine(asd2.ToString());
+
             //asd2.BackPropagation();
             //asd2.SetInputs(new() { 0, 1 });
             //asd2.Calculate();

@@ -115,16 +115,16 @@ namespace AI
                     Layers[i].NodesDeltas.Clear();
                 }
 
-                for (int pattern = 0; pattern < patterns.Length; pattern++)
+                for (int pattern = 0; pattern < patterns.GetLength(0); pattern++)
                 {
-                    double[] outputs = SetInputs(patterns[0, 0]).Update();
+                    double[] outputs = SetInputs(patterns[pattern, 0]).Update();
 
                     double[] errors = new double[outputs.Length];
                     double[] dErrors = new double[outputs.Length];
                     for (int i = 0; i < outputs.GetLength(0); i++)
                     {
-                        errors[i] = Math.Pow(outputs[i] - patterns[i, 1][0], 2) / 2;
-                        dErrors[i] = outputs[i] - patterns[i, 1][0];
+                        errors[i] = Math.Pow(outputs[i] - patterns[pattern, 1][i], 2) / 2;
+                        dErrors[i] = outputs[i] - patterns[pattern, 1][i];
                     }
 
                     for (int i = Layers.Count - 1; i >= 0; i--)
@@ -163,7 +163,7 @@ namespace AI
                     }
                 }
 
-                for (int pattern = 0; pattern < patterns.Length; pattern++)
+                for (int pattern = 0; pattern < patterns.GetLength(0); pattern++)
                 {
                     for (int i = 1; i < Layers.Count; i++)
                     {

@@ -6,7 +6,6 @@ namespace AI
     public class NeuralNetwork
     {
         public List<Layer> Layers { get; set; }
-        public double LearningRate;
 
         public double[] GetInputs()
         {
@@ -32,17 +31,14 @@ namespace AI
             return this;
         }
 
-        public NeuralNetwork(List<Layer> layers = null, double learningRate = 1)
+        public NeuralNetwork(List<Layer> layers = null)
         {
             layers ??= new List<Layer>();
             Layers = layers;
-            LearningRate = learningRate;
         }
 
-        public NeuralNetwork(List<int> structure, ActivationTypes activationType, double learningRate = 1)
+        public NeuralNetwork(List<int> structure, ActivationTypes activationType)
         {
-            LearningRate = learningRate;
-
             List<ActivationTypes> _activationTypes = new();
 
             for (int i = 0; i < structure.Count; i++)
@@ -60,10 +56,8 @@ namespace AI
             Build(structure, _activationTypes);
         }
 
-        public NeuralNetwork(List<int> structure, List<ActivationTypes> activationTypes, double learningRate = 1)
+        public NeuralNetwork(List<int> structure, List<ActivationTypes> activationTypes)
         {
-            LearningRate = learningRate;
-
             Build(structure, activationTypes);
         }
 
@@ -95,18 +89,9 @@ namespace AI
             return Layers[Layers.Count - 1].Outputs;
         }
 
-        public NeuralNetwork BackPropagate()
+        public NeuralNetwork BackPropagate(double[,][] patterns, int epoches, double learningRate)
         {
-            // TODO: take patterns as argument
-            double[,][] patterns =
-            {
-                { new double[] { 0.0, 1.0 }, new double[] { 1.0 } },
-                { new double[] { 1.0, 0.0 }, new double[] { 1.0 } },
-                { new double[] { 1.0, 1.0 }, new double[] { 0.0 } },
-                { new double[] { 0.0, 0.0 }, new double[] { 0.0 } },
-            };
-
-            for (int epoch = 0; epoch < 1000; epoch++)
+            for (int epoch = 0; epoch < epoches; epoch++)
             {
                 for (int i = 0; i < Layers.Count; i++)
                 {
@@ -121,6 +106,7 @@ namespace AI
 
                     double[] errors = new double[outputs.Length];
                     double[] dErrors = new double[outputs.Length];
+
                     for (int i = 0; i < outputs.GetLength(0); i++)
                     {
                         errors[i] = Math.Pow(outputs[i] - patterns[pattern, 1][i], 2) / 2;
@@ -129,8 +115,6 @@ namespace AI
 
                     for (int i = Layers.Count - 1; i >= 0; i--)
                     {
-                        //Array.Clear(Layers[i].WeightsDeltas, 0, Layers[i].WeightsDeltas.Length);
-                        //Array.Clear(Layers[i].NodesDeltas, 0, Layers[i].NodesDeltas.Length);
                         Layers[i].WeightsDeltas.Add(new double[Layers[i].NeuronsNumber, Layers[i].LastLayerNeuronsNumber]);
                         Layers[i].NodesDeltas.Add(new double[Layers[i].NeuronsNumber]);
 
@@ -171,10 +155,10 @@ namespace AI
                         {
                             for (int k = 0; k < Layers[i].LastLayerNeuronsNumber; k++)
                             {
-                                Layers[i].Weights[j, k] -= Layers[i].WeightsDeltas[pattern][j, k] * LearningRate;
+                                Layers[i].Weights[j, k] -= Layers[i].WeightsDeltas[pattern][j, k] * learningRate;
                             }
 
-                            Layers[i].Biases[j] -= Layers[i].NodesDeltas[pattern][j] * LearningRate;
+                            Layers[i].Biases[j] -= Layers[i].NodesDeltas[pattern][j] * learningRate;
                         }
                     }
                 }
@@ -257,7 +241,6 @@ namespace AI
                 }
 
                 Array.Clear(Outputs, 0, Outputs.Length);
-                // Array.Clear(Derivatives, 0, Derivatives.Length);
 
                 Derivatives.Add(new double[NeuronsNumber]);
 
@@ -363,7 +346,7 @@ namespace AI
 
                 public static double Derivative(double value)
                 {
-                    return Math.Exp(-value) / Math.Pow(1 + Math.Exp(-value), 2.0);
+                    return Math.Exp(-value) / Math.Pow(1.0 + Math.Exp(-value), 2.0);
                 }
             }
 

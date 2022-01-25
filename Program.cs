@@ -7,49 +7,31 @@ namespace AI
     {
         static void Main(string[] args)
         {
-
             List<int> dimensions = new() { 2, 3, 1 };
-            double[] inputs1 = { 0.0, 1.0 };
-            double[] inputs2 = { 1.0, 0.0 };
-            double[] inputs3 = { 1.0, 1.0 };
-            double[] inputs4 = { 0.0, 0.0 };
-            var asd2 = new NeuralNetwork(dimensions, NeuralNetwork.ActivationTypes.TANH, 0.5);
+            double[,][] patterns =
+            {
+                { new double[] { 0.0, 1.0 }, new double[] { 1.0 } },
+                { new double[] { 1.0, 0.0 }, new double[] { 1.0 } },
+                { new double[] { 1.0, 1.0 }, new double[] { 0.0 } },
+                { new double[] { 0.0, 0.0 }, new double[] { 0.0 } },
+            };
 
-            asd2.BackPropagate();
+            NeuralNetwork nn = new(dimensions, NeuralNetwork.ActivationTypes.TANH);
+
+            nn.BackPropagate(patterns, 600, 0.4);
 
             Console.WriteLine("Outputs\n");
 
-            asd2.SetInputs(inputs1).Update();
-            Console.WriteLine("Input:");
-            Console.WriteLine(asd2.GetInputs(0));
-            Console.WriteLine(asd2.GetInputs(1));
-            Console.WriteLine("Output:");
-            Console.WriteLine(asd2.Layers[asd2.Layers.Count - 1].Outputs[0]);
-            Console.WriteLine();
-
-            asd2.SetInputs(inputs2).Update();
-            Console.WriteLine("Input:");
-            Console.WriteLine(asd2.GetInputs(0));
-            Console.WriteLine(asd2.GetInputs(1));
-            Console.WriteLine("Output:");
-            Console.WriteLine(asd2.Layers[asd2.Layers.Count - 1].Outputs[0]);
-            Console.WriteLine();
-
-            asd2.SetInputs(inputs3).Update();
-            Console.WriteLine("Input:");
-            Console.WriteLine(asd2.GetInputs(0));
-            Console.WriteLine(asd2.GetInputs(1));
-            Console.WriteLine("Output:");
-            Console.WriteLine(asd2.Layers[asd2.Layers.Count - 1].Outputs[0]);
-            Console.WriteLine();
-
-            asd2.SetInputs(inputs4).Update();
-            Console.WriteLine("Input:");
-            Console.WriteLine(asd2.GetInputs(0));
-            Console.WriteLine(asd2.GetInputs(1));
-            Console.WriteLine("Output:");
-            Console.WriteLine(asd2.Layers[asd2.Layers.Count - 1].Outputs[0]);
-            Console.WriteLine();
+            for (int i = 0; i < patterns.GetLength(0); i++)
+            {
+                nn.SetInputs(patterns[i, 0]).Update();
+                Console.WriteLine("Input:");
+                Console.WriteLine(nn.GetInputs(0));
+                Console.WriteLine(nn.GetInputs(1));
+                Console.WriteLine("Output:");
+                Console.WriteLine(nn.Layers[nn.Layers.Count - 1].Outputs[0]);
+                Console.WriteLine();
+            }
         }
     }
 }

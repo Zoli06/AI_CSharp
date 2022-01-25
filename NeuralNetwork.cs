@@ -7,28 +7,28 @@ namespace AI
     {
         public List<Layer> Layers { get; set; }
 
-        public double[] GetInputs()
+        public double[] Inputs
         {
-            return Layers[0].Outputs;
+            get
+            {
+                return Layers[0].Outputs;
+            }
+            set
+            {
+                Layers[0].Outputs = value;
+            }
         }
 
-        public double GetInputs(int i)
+        public double[] Outputs
         {
-            return Layers[0].Outputs[i];
-        }
-
-        public NeuralNetwork SetInputs(double[] inputs)
-        {
-            Layers[0].Outputs = inputs;
-
-            return this;
-        }
-
-        public NeuralNetwork SetInputs(int i, double input)
-        {
-            Layers[0].Outputs[i] = input;
-
-            return this;
+            get
+            {
+                return Layers[Layers.Count - 1].Outputs;
+            }
+            set
+            {
+                Layers[Layers.Count - 1].Outputs = value;
+            }
         }
 
         public NeuralNetwork(List<Layer> layers = null)
@@ -86,7 +86,7 @@ namespace AI
                 Layers[i].Update(Layers[i - 1].Outputs);
             }
 
-            return Layers[Layers.Count - 1].Outputs;
+            return Outputs;
         }
 
         public NeuralNetwork BackPropagate(double[,][] patterns, int epoches, double learningRate)
@@ -102,7 +102,8 @@ namespace AI
 
                 for (int pattern = 0; pattern < patterns.GetLength(0); pattern++)
                 {
-                    double[] outputs = SetInputs(patterns[pattern, 0]).Update();
+                    Inputs = patterns[pattern, 0];
+                    double[] outputs = Update();
 
                     double[] errors = new double[outputs.Length];
                     double[] dErrors = new double[outputs.Length];
@@ -165,7 +166,7 @@ namespace AI
 
                 if (epoch % 100 == 0)
                 {
-                    //Console.WriteLine(Layers[Layers.Count - 1].Outputs[0]);
+                    //Console.WriteLine(Outputs[0]);
                     //Console.WriteLine();
                 }
             }

@@ -201,206 +201,206 @@ namespace AI
             }
             return str;
         }
-    }
 
-    public class Layer
-    {
-        public double[,] Weights { get; set; }
-        public double[] Biases { get; set; }
-        public double[] Outputs { get; set; }
-        public List<double[]> Derivatives { get; set; }
-        public List<double[,]> WeightsDeltas { get; set; }
-        public List<double[]> NodesDeltas { get; set; }
-        ActivationTypes ActivationType { get; set; }
-        public int NeuronsNumber
+        public class Layer
         {
-            get
+            public double[,] Weights { get; set; }
+            public double[] Biases { get; set; }
+            public double[] Outputs { get; set; }
+            public List<double[]> Derivatives { get; set; }
+            public List<double[,]> WeightsDeltas { get; set; }
+            public List<double[]> NodesDeltas { get; set; }
+            ActivationTypes ActivationType { get; set; }
+            public int NeuronsNumber
             {
-                return Weights.GetLength(0);
-            }
-        }
-        public int LastLayerNeuronsNumber
-        {
-            get
-            {
-                return Weights.GetLength(1);
-            }
-        }
-
-        public Layer(int neuronsNumber, int lastLayerNeuronsNumber, ActivationTypes activationType)
-        {
-            Weights = new double[neuronsNumber, lastLayerNeuronsNumber];
-            Biases = new double[neuronsNumber];
-            Outputs = new double[neuronsNumber];
-            Derivatives = new();
-            WeightsDeltas = new();
-            NodesDeltas = new();
-
-            Random random = new Random();
-
-            for (int i = 0; i < neuronsNumber; i++)
-            {
-                Biases[i] = 0.0;
-                for (int j = 0; j < lastLayerNeuronsNumber; j++)
+                get
                 {
-                    Weights[i, j] = random.NextDouble();
+                    return Weights.GetLength(0);
+                }
+            }
+            public int LastLayerNeuronsNumber
+            {
+                get
+                {
+                    return Weights.GetLength(1);
                 }
             }
 
-            ActivationType = activationType;
-        }
-
-        public double[] Update(double[] inputs)
-        {
-            if (inputs.GetLength(0) != LastLayerNeuronsNumber)
+            public Layer(int neuronsNumber, int lastLayerNeuronsNumber, ActivationTypes activationType)
             {
-                throw new Exception("Inputs number must be equal to LastLayerNeuronsNumber");
-            }
+                Weights = new double[neuronsNumber, lastLayerNeuronsNumber];
+                Biases = new double[neuronsNumber];
+                Outputs = new double[neuronsNumber];
+                Derivatives = new();
+                WeightsDeltas = new();
+                NodesDeltas = new();
 
-            Array.Clear(Outputs, 0, Outputs.Length);
-            // Array.Clear(Derivatives, 0, Derivatives.Length);
+                Random random = new Random();
 
-            Derivatives.Add(new double[NeuronsNumber]);
-
-            for (int i = 0; i < NeuronsNumber; i++)
-            {
-                Outputs[i] = 0.0;
-                for (int j = 0; j < LastLayerNeuronsNumber; j++)
+                for (int i = 0; i < neuronsNumber; i++)
                 {
-                    Outputs[i] += inputs[j] * Weights[i, j];
+                    Biases[i] = 0.0;
+                    for (int j = 0; j < lastLayerNeuronsNumber; j++)
+                    {
+                        Weights[i, j] = random.NextDouble();
+                    }
                 }
-                Outputs[i] += Biases[i];
 
-                Outputs[i] = Activate(Outputs[i]);
-
-                Derivatives[Derivatives.Count - 1][i] = Outputs[i] * (1 - Outputs[i]);
+                ActivationType = activationType;
             }
 
-            return Outputs;
-        }
-
-        public double Activate(double value)
-        {
-            switch (ActivationType)
+            public double[] Update(double[] inputs)
             {
-                case ActivationTypes.BINARYSTEP: return Activation.BinaryStep.Default(value);
-                case ActivationTypes.LINEAR: return Activation.Linear.Default(value);
-                case ActivationTypes.SIGMOID: return Activation.Sigmoid.Default(value); ;
-                case ActivationTypes.TANH: return Activation.TanH.Default(value);
-                case ActivationTypes.RELU: return Activation.ReLU.Default(value);
-                default: throw new NotImplementedException();
-            }
-        }
-
-        public void AddNoise()
-        {
-            Random random = new Random();
-
-            for (int i = 0; i < NeuronsNumber; i++)
-            {
-                Biases[i] += random.NextDouble() * 2 - 1;
-                for (int j = 0; j < LastLayerNeuronsNumber; j++)
+                if (inputs.GetLength(0) != LastLayerNeuronsNumber)
                 {
-                    Weights[i, j] += random.NextDouble() * 2 - 1;
+                    throw new Exception("Inputs number must be equal to LastLayerNeuronsNumber");
                 }
-            }
-        }
 
-        public override string ToString()
-        {
-            string str = "";
+                Array.Clear(Outputs, 0, Outputs.Length);
+                // Array.Clear(Derivatives, 0, Derivatives.Length);
 
-            for (int i = 0; i < NeuronsNumber; i++)
-            {
-                string _weights = "(";
-                for (int j = 0; j < LastLayerNeuronsNumber; j++)
+                Derivatives.Add(new double[NeuronsNumber]);
+
+                for (int i = 0; i < NeuronsNumber; i++)
                 {
-                    _weights += $"{Weights[i, j]}, ";
+                    Outputs[i] = 0.0;
+                    for (int j = 0; j < LastLayerNeuronsNumber; j++)
+                    {
+                        Outputs[i] += inputs[j] * Weights[i, j];
+                    }
+                    Outputs[i] += Biases[i];
+
+                    Outputs[i] = Activate(Outputs[i]);
+
+                    Derivatives[Derivatives.Count - 1][i] = Outputs[i] * (1 - Outputs[i]);
                 }
-                _weights += ")";
 
-                str += $"({_weights}, {Biases[i]}, {Outputs[i]})\n";
+                return Outputs;
             }
 
-            return str;
-        }
-    }
-
-    public enum ActivationTypes
-    {
-        BINARYSTEP,
-        LINEAR,
-        SIGMOID,
-        TANH,
-        RELU
-    }
-
-    // TODO: implement all derivatives
-    public class Activation
-    {
-        public static class BinaryStep
-        {
-            public static int Default(double value)
+            public double Activate(double value)
             {
-                return Convert.ToInt32(value >= 0.0);
+                switch (ActivationType)
+                {
+                    case ActivationTypes.BINARYSTEP: return Activation.BinaryStep.Default(value);
+                    case ActivationTypes.LINEAR: return Activation.Linear.Default(value);
+                    case ActivationTypes.SIGMOID: return Activation.Sigmoid.Default(value); ;
+                    case ActivationTypes.TANH: return Activation.TanH.Default(value);
+                    case ActivationTypes.RELU: return Activation.ReLU.Default(value);
+                    default: throw new NotImplementedException();
+                }
             }
 
-            public static double Derivative(double value)
+            public void AddNoise()
             {
-                throw new NotImplementedException();
-            }
-        }
+                Random random = new Random();
 
-        public static class Linear
-        {
-            public static double Default(double value)
-            {
-                return value;
-            }
-
-            public static double Derivative(double value)
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public static class Sigmoid
-        {
-            public static double Default(double value)
-            {
-                return 1.0 / (1.0 + Math.Exp(-value));
+                for (int i = 0; i < NeuronsNumber; i++)
+                {
+                    Biases[i] += random.NextDouble() * 2 - 1;
+                    for (int j = 0; j < LastLayerNeuronsNumber; j++)
+                    {
+                        Weights[i, j] += random.NextDouble() * 2 - 1;
+                    }
+                }
             }
 
-            public static double Derivative(double value)
+            public override string ToString()
             {
-                return Math.Exp(-value) / Math.Pow(1 + Math.Exp(-value), 2.0);
+                string str = "";
+
+                for (int i = 0; i < NeuronsNumber; i++)
+                {
+                    string _weights = "(";
+                    for (int j = 0; j < LastLayerNeuronsNumber; j++)
+                    {
+                        _weights += $"{Weights[i, j]}, ";
+                    }
+                    _weights += ")";
+
+                    str += $"({_weights}, {Biases[i]}, {Outputs[i]})\n";
+                }
+
+                return str;
             }
         }
 
-        public static class TanH
+        // TODO: implement all derivatives
+        public class Activation
         {
-            public static double Default(double value)
+            public static class BinaryStep
             {
-                return Math.Tanh(value);
+                public static int Default(double value)
+                {
+                    return Convert.ToInt32(value >= 0.0);
+                }
+
+                public static double Derivative(double value)
+                {
+                    throw new NotImplementedException();
+                }
             }
 
-            public static double Derivative(double value)
+            public static class Linear
             {
-                throw new NotImplementedException();
+                public static double Default(double value)
+                {
+                    return value;
+                }
+
+                public static double Derivative(double value)
+                {
+                    throw new NotImplementedException();
+                }
+            }
+
+            public static class Sigmoid
+            {
+                public static double Default(double value)
+                {
+                    return 1.0 / (1.0 + Math.Exp(-value));
+                }
+
+                public static double Derivative(double value)
+                {
+                    return Math.Exp(-value) / Math.Pow(1 + Math.Exp(-value), 2.0);
+                }
+            }
+
+            public static class TanH
+            {
+                public static double Default(double value)
+                {
+                    return Math.Tanh(value);
+                }
+
+                public static double Derivative(double value)
+                {
+                    throw new NotImplementedException();
+                }
+            }
+
+            public static class ReLU
+            {
+                public static double Default(double value)
+                {
+                    return Math.Max(0, value);
+                }
+
+                public static double Derivative(double value)
+                {
+                    throw new NotImplementedException();
+                }
             }
         }
 
-        public static class ReLU
+        public enum ActivationTypes
         {
-            public static double Default(double value)
-            {
-                return Math.Max(0, value);
-            }
-
-            public static double Derivative(double value)
-            {
-                throw new NotImplementedException();
-            }
+            BINARYSTEP,
+            LINEAR,
+            SIGMOID,
+            TANH,
+            RELU
         }
     }
 }

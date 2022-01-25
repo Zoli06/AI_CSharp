@@ -266,7 +266,6 @@ namespace AI
             {
                 switch (ActivationType)
                 {
-                    case ActivationTypes.BINARYSTEP: return Activation.BinaryStep.Default(value);
                     case ActivationTypes.LINEAR: return Activation.Linear.Default(value);
                     case ActivationTypes.SIGMOID: return Activation.Sigmoid.Default(value); ;
                     case ActivationTypes.TANH: return Activation.TanH.Default(value);
@@ -309,22 +308,8 @@ namespace AI
             }
         }
 
-        // TODO: implement all derivatives
         public class Activation
         {
-            public static class BinaryStep
-            {
-                public static int Default(double value)
-                {
-                    return Convert.ToInt32(value >= 0.0);
-                }
-
-                public static double Derivative(double value)
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
             public static class Linear
             {
                 public static double Default(double value)
@@ -334,7 +319,7 @@ namespace AI
 
                 public static double Derivative(double value)
                 {
-                    throw new NotImplementedException();
+                    return 1.0;
                 }
             }
 
@@ -360,7 +345,7 @@ namespace AI
 
                 public static double Derivative(double value)
                 {
-                    throw new NotImplementedException();
+                    return 1.0 - Math.Pow(Math.Tanh(value), 2);
                 }
             }
 
@@ -373,14 +358,20 @@ namespace AI
 
                 public static double Derivative(double value)
                 {
-                    throw new NotImplementedException();
+                    if (value >= 0.0)
+                    {
+                        return 1.0;
+                    }
+                    else
+                    {
+                        return 0.0;
+                    }
                 }
             }
         }
 
         public enum ActivationTypes
         {
-            BINARYSTEP,
             LINEAR,
             SIGMOID,
             TANH,

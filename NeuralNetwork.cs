@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace AI
@@ -95,9 +95,9 @@ namespace AI
             {
                 for (int i = 0; i < Layers.Count; i++)
                 {
-                    Layers[i].Derivatives.Clear();
-                    Layers[i].WeightsDeltas.Clear();
-                    Layers[i].NodesDeltas.Clear();
+                    Layers[i].DNodes.Clear();
+                    Layers[i].DWeights.Clear();
+                    Layers[i].DeltaNodes.Clear();
                 }
 
                 for (int pattern = 0; pattern < patterns.GetLength(0); pattern++)
@@ -116,14 +116,14 @@ namespace AI
 
                     for (int i = Layers.Count - 1; i >= 0; i--)
                     {
-                        Layers[i].WeightsDeltas.Add(new double[Layers[i].NeuronsNumber, Layers[i].LastLayerNeuronsNumber]);
-                        Layers[i].NodesDeltas.Add(new double[Layers[i].NeuronsNumber]);
+                        Layers[i].DWeights.Add(new double[Layers[i].NeuronsNumber, Layers[i].LastLayerNeuronsNumber]);
+                        Layers[i].DeltaNodes.Add(new double[Layers[i].NeuronsNumber]);
 
                         for (int j = 0; j < Layers[i].NeuronsNumber; j++)
                         {
                             if (i == Layers.Count - 1)
                             {
-                                Layers[i].NodesDeltas[pattern][j] = dErrors[j] * Layers[i].Derivatives[pattern][j];
+                                Layers[i].DeltaNodes[pattern][j] = dErrors[j] * Layers[i].DNodes[pattern][j];
                             }
                             else if (i != 0)
                             {
@@ -131,17 +131,17 @@ namespace AI
 
                                 for (int k = 0; k < Layers[i + 1].NeuronsNumber; k++)
                                 {
-                                    sum += Layers[i + 1].NodesDeltas[pattern][k] * Layers[i + 1].Weights[k, j];
+                                    sum += Layers[i + 1].DeltaNodes[pattern][k] * Layers[i + 1].Weights[k, j];
                                 }
 
-                                Layers[i].NodesDeltas[pattern][j] = sum * Layers[i].Derivatives[pattern][j];
+                                Layers[i].DeltaNodes[pattern][j] = sum * Layers[i].DNodes[pattern][j];
                             }
 
                             if (i != 0)
                             {
                                 for (int k = 0; k < Layers[i].LastLayerNeuronsNumber; k++)
                                 {
-                                    Layers[i].WeightsDeltas[pattern][j, k] = Layers[i].NodesDeltas[pattern][j] * Layers[i - 1].Outputs[k];
+                                    Layers[i].DWeights[pattern][j, k] = Layers[i].DeltaNodes[pattern][j] * Layers[i - 1].Outputs[k];
                                 }
                             }
                         }
@@ -156,10 +156,10 @@ namespace AI
                         {
                             for (int k = 0; k < Layers[i].LastLayerNeuronsNumber; k++)
                             {
-                                Layers[i].Weights[j, k] -= Layers[i].WeightsDeltas[pattern][j, k] * learningRate;
+                                Layers[i].Weights[j, k] -= Layers[i].DWeights[pattern][j, k] * learningRate;
                             }
 
-                            Layers[i].Biases[j] -= Layers[i].NodesDeltas[pattern][j] * learningRate;
+                            Layers[i].Biases[j] -= Layers[i].DeltaNodes[pattern][j] * learningRate;
                         }
                     }
                 }
@@ -192,9 +192,9 @@ namespace AI
             public double[,] Weights { get; set; }
             public double[] Biases { get; set; }
             public double[] Outputs { get; set; }
-            public List<double[]> Derivatives { get; set; }
-            public List<double[,]> WeightsDeltas { get; set; }
-            public List<double[]> NodesDeltas { get; set; }
+            public List<double[]> DNodes { get; set; }
+            public List<double[,]> DWeights { get; set; }
+            public List<double[]> DeltaNodes { get; set; }
             ActivationTypes ActivationType { get; set; }
             public int NeuronsNumber
             {
@@ -216,9 +216,9 @@ namespace AI
                 Weights = new double[neuronsNumber, lastLayerNeuronsNumber];
                 Biases = new double[neuronsNumber];
                 Outputs = new double[neuronsNumber];
-                Derivatives = new();
-                WeightsDeltas = new();
-                NodesDeltas = new();
+                DNodes = new();
+                DWeights = new();
+                DeltaNodes = new();
 
                 Random random = new Random();
 
@@ -243,7 +243,7 @@ namespace AI
 
                 Array.Clear(Outputs, 0, Outputs.Length);
 
-                Derivatives.Add(new double[NeuronsNumber]);
+                DNodes.Add(new double[NeuronsNumber]);
 
                 for (int i = 0; i < NeuronsNumber; i++)
                 {
@@ -256,7 +256,7 @@ namespace AI
 
                     Outputs[i] = Activate(Outputs[i]);
 
-                    Derivatives[Derivatives.Count - 1][i] = Outputs[i] * (1 - Outputs[i]);
+                    DNodes[DNodes.Count - 1][i] = Outputs[i] * (1 - Outputs[i]);
                 }
 
                 return Outputs;

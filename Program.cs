@@ -7,18 +7,18 @@ namespace AI
     {
         static void Main(string[] args)
         {
-            List<int> dimensions = new() { 2, 3, 1 };
+            List<int> dimensions = new() { 2, 2, 2 };
             double[,][] patterns =
             {
-                { new double[] { 0.0, 1.0 }, new double[] { 1.0 } },
-                { new double[] { 1.0, 0.0 }, new double[] { 1.0 } },
-                { new double[] { 1.0, 1.0 }, new double[] { 0.0 } },
-                { new double[] { 0.0, 0.0 }, new double[] { 0.0 } },
+                { new double[] { 0, 1 }, new double[] { 1, 0 } },
+                { new double[] { 1, 0 }, new double[] { 1, 0 } },
+                { new double[] { 1, 1 }, new double[] { 0, 1 } },
+                { new double[] { 0, 0 }, new double[] { 0, 1 } },
             };
 
-            NeuralNetwork nn = new(dimensions, NeuralNetwork.ActivationTypes.TANH);
+            NeuralNetwork nn = new(dimensions, NeuralNetwork.ActivationTypes.SIGMOID);
 
-            nn.BackPropagate(patterns, 600, 0.4);
+            nn.BackPropagate(patterns, 2000, .4);
 
             Console.WriteLine("Outputs\n");
 
@@ -32,6 +32,7 @@ namespace AI
                 Console.WriteLine(nn.Inputs[1]);
                 Console.WriteLine("Output:");
                 Console.WriteLine(nn.Layers[nn.Layers.Count - 1].Outputs[0]);
+                Console.WriteLine(nn.Layers[nn.Layers.Count - 1].Outputs[1]);
                 Console.WriteLine();
             }
         }

@@ -256,10 +256,22 @@ namespace AI
 
                     Outputs[i] = Activate(Outputs[i]);
 
-                    DNodes[DNodes.Count - 1][i] = Outputs[i] * (1 - Outputs[i]);
+                    DNodes[DNodes.Count - 1][i] = Derivative(Outputs[i]);
                 }
 
                 return Outputs;
+            }
+
+            public double Derivative(double value)
+            {
+                switch (ActivationType)
+                {
+                    case ActivationTypes.LINEAR: return Activation.Linear.Derivative(value);
+                    case ActivationTypes.SIGMOID: return Activation.Sigmoid.Derivative(value);
+                    case ActivationTypes.TANH: return Activation.TanH.Derivative(value);
+                    case ActivationTypes.RELU: return Activation.ReLU.Derivative(value);
+                    default: throw new NotImplementedException();
+                }
             }
 
             public double Activate(double value)
@@ -267,24 +279,10 @@ namespace AI
                 switch (ActivationType)
                 {
                     case ActivationTypes.LINEAR: return Activation.Linear.Default(value);
-                    case ActivationTypes.SIGMOID: return Activation.Sigmoid.Default(value); ;
+                    case ActivationTypes.SIGMOID: return Activation.Sigmoid.Default(value);
                     case ActivationTypes.TANH: return Activation.TanH.Default(value);
                     case ActivationTypes.RELU: return Activation.ReLU.Default(value);
                     default: throw new NotImplementedException();
-                }
-            }
-
-            public void AddNoise()
-            {
-                Random random = new Random();
-
-                for (int i = 0; i < NeuronsNumber; i++)
-                {
-                    Biases[i] += random.NextDouble() * 2 - 1;
-                    for (int j = 0; j < LastLayerNeuronsNumber; j++)
-                    {
-                        Weights[i, j] += random.NextDouble() * 2 - 1;
-                    }
                 }
             }
 
@@ -332,7 +330,7 @@ namespace AI
 
                 public static double Derivative(double value)
                 {
-                    return Math.Exp(-value) / Math.Pow(1.0 + Math.Exp(-value), 2.0);
+                    return value * (1.0 - value);
                 }
             }
 

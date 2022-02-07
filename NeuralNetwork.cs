@@ -64,27 +64,30 @@ namespace AI
             Build(structure, activationTypes);
         }
 
-        public NeuralNetwork(List<double[,]> weights, List<double[]> biases, List<ActivationTypes> activationTypes)
-        {
-
-        }
-
         public NeuralNetwork(string path)
         {
             string text = File.ReadAllText(path);
 
-            var a = JsonConvert.DeserializeObject(text);
+            dynamic a = JsonConvert.DeserializeObject(text);
+
+            List<double[,]> weights = new();
+            List<double[]> biases = new();
+            List<ActivationTypes> activationTypes = new();
+
+            for (int i = 0; i < a.layers.Count; i++)
+            {
+                weights.Add(a.layers[i].weights.ToObject<double[,]>());
+                biases.Add(a.layers[i].biases.ToObject<double[]>());
+                activationTypes.Add(a.layers[i].activationType.ToObject<ActivationTypes>());
+            }
+
+            Build(weights, biases, activationTypes);
 
             // File.WriteAllTextAsync("H:/export4.nns", JsonConvert.SerializeObject(a));
         }
 
         private void Build(List<int> structure, List<ActivationTypes> activationTypes)
         {
-            if (activationTypes.Count != structure.Count)
-            {
-                throw new Exception("First dimension of activationTypes must be equal to the number of layers");
-            }
-
             Layers = new List<Layer>();
 
             Layers.Add(new Layer(structure[0], 0, activationTypes[0]));
@@ -92,6 +95,18 @@ namespace AI
             for (int i = 1; i < structure.Count; i++)
             {
                 Layers.Add(new Layer(structure[i], structure[i - 1], activationTypes[i]));
+            }
+        }
+
+        private void Build(List<double[,]> weights, List<double[]> biases, List<ActivationTypes> activationTypes)
+        {
+            Layers = new List<Layer>();
+
+            Layers.Add(new Layer(weights[0].GetLength(0), 0, activationTypes[0]));
+
+            for (int i = 1; i < weights.Count; i++)
+            {
+                Layers.Add(new Layer(weights[i], biases[i], activationTypes[i]));
             }
         }
 
@@ -262,6 +277,20 @@ namespace AI
                     }
                 }
 
+                ActivationType = activationType;
+            }
+
+            public Layer(double[,] weights, double[] biases, ActivationTypes activationType)
+            {
+                Weights = new double[weights.GetLength(0), weights.GetLength(1)];
+                Biases = new double[weights.GetLength(0)];
+                Outputs = new double[weights.GetLength(0)];
+                DNodes = new();
+                DWeights = new();
+                DeltaNodes = new();
+
+                Weights = weights;
+                Biases = biases;
                 ActivationType = activationType;
             }
 

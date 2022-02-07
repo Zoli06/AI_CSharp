@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Newtonsoft.Json;
+using System.IO;
 
 namespace AI
 {
@@ -61,6 +64,20 @@ namespace AI
             Build(structure, activationTypes);
         }
 
+        public NeuralNetwork(List<double[,]> weights, List<double[]> biases, List<ActivationTypes> activationTypes)
+        {
+
+        }
+
+        public NeuralNetwork(string path)
+        {
+            string text = File.ReadAllText(path);
+
+            var a = JsonConvert.DeserializeObject(text);
+
+            // File.WriteAllTextAsync("H:/export4.nns", JsonConvert.SerializeObject(a));
+        }
+
         private void Build(List<int> structure, List<ActivationTypes> activationTypes)
         {
             if (activationTypes.Count != structure.Count)
@@ -89,7 +106,7 @@ namespace AI
             return Outputs;
         }
 
-        public NeuralNetwork BackPropagate(double[,][] patterns, int epoches, double learningRate)
+        public void BackPropagate(double[,][] patterns, int epoches, double learningRate)
         {
             for (int epoch = 0; epoch < epoches; epoch++)
             {
@@ -172,8 +189,22 @@ namespace AI
             }
 
             Console.WriteLine("Finished");
+        }
 
-            return this;
+        public void Export(string path)
+        {
+            var datas = new
+            {
+                layers = Layers.Select((item, index) => new
+                {
+                    isInputLayer = index == 0,
+                    weights = item.Weights,
+                    biases = item.Biases,
+                    activationType = item.ActivationType
+                })
+            };
+
+            File.WriteAllTextAsync(path, JsonConvert.SerializeObject(datas));
         }
 
         public override string ToString()
@@ -195,7 +226,7 @@ namespace AI
             public List<double[]> DNodes { get; set; }
             public List<double[,]> DWeights { get; set; }
             public List<double[]> DeltaNodes { get; set; }
-            ActivationTypes ActivationType { get; set; }
+            public ActivationTypes ActivationType { get; set; }
             public int NeuronsNumber
             {
                 get

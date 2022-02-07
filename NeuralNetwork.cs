@@ -40,15 +40,15 @@ namespace AI
             Layers = layers;
         }
 
-        public NeuralNetwork(List<int> structure, ActivationTypes activationType)
+        public NeuralNetwork(List<int> structure, ActivationType activationType)
         {
-            List<ActivationTypes> _activationTypes = new();
+            List<ActivationType> _activationTypes = new();
 
             for (int i = 0; i < structure.Count; i++)
             {
                 if (i == 0)
                 {
-                    _activationTypes.Add(ActivationTypes.LINEAR);
+                    _activationTypes.Add(ActivationType.LINEAR);
                 }
                 else
                 {
@@ -59,7 +59,7 @@ namespace AI
             Build(structure, _activationTypes);
         }
 
-        public NeuralNetwork(List<int> structure, List<ActivationTypes> activationTypes)
+        public NeuralNetwork(List<int> structure, List<ActivationType> activationTypes)
         {
             Build(structure, activationTypes);
         }
@@ -72,13 +72,13 @@ namespace AI
 
             List<double[,]> weights = new();
             List<double[]> biases = new();
-            List<ActivationTypes> activationTypes = new();
+            List<ActivationType> activationTypes = new();
 
             for (int i = 0; i < a.layers.Count; i++)
             {
                 weights.Add(a.layers[i].weights.ToObject<double[,]>());
                 biases.Add(a.layers[i].biases.ToObject<double[]>());
-                activationTypes.Add(a.layers[i].activationType.ToObject<ActivationTypes>());
+                activationTypes.Add(a.layers[i].activationType.ToObject<ActivationType>());
             }
 
             Build(weights, biases, activationTypes);
@@ -86,7 +86,7 @@ namespace AI
             // File.WriteAllTextAsync("H:/export4.nns", JsonConvert.SerializeObject(a));
         }
 
-        private void Build(List<int> structure, List<ActivationTypes> activationTypes)
+        private void Build(List<int> structure, List<ActivationType> activationTypes)
         {
             Layers = new List<Layer>();
 
@@ -98,7 +98,7 @@ namespace AI
             }
         }
 
-        private void Build(List<double[,]> weights, List<double[]> biases, List<ActivationTypes> activationTypes)
+        private void Build(List<double[,]> weights, List<double[]> biases, List<ActivationType> activationTypes)
         {
             Layers = new List<Layer>();
 
@@ -241,7 +241,7 @@ namespace AI
             public List<double[]> DNodes { get; set; }
             public List<double[,]> DWeights { get; set; }
             public List<double[]> DeltaNodes { get; set; }
-            public ActivationTypes ActivationType { get; set; }
+            public ActivationType ActivationType { get; set; }
             public int NeuronsNumber
             {
                 get
@@ -257,7 +257,7 @@ namespace AI
                 }
             }
 
-            public Layer(int neuronsNumber, int lastLayerNeuronsNumber, ActivationTypes activationType)
+            public Layer(int neuronsNumber, int lastLayerNeuronsNumber, ActivationType activationType)
             {
                 Weights = new double[neuronsNumber, lastLayerNeuronsNumber];
                 Biases = new double[neuronsNumber];
@@ -280,7 +280,7 @@ namespace AI
                 ActivationType = activationType;
             }
 
-            public Layer(double[,] weights, double[] biases, ActivationTypes activationType)
+            public Layer(double[,] weights, double[] biases, ActivationType activationType)
             {
                 Weights = new double[weights.GetLength(0), weights.GetLength(1)];
                 Biases = new double[weights.GetLength(0)];
@@ -326,10 +326,10 @@ namespace AI
             {
                 switch (ActivationType)
                 {
-                    case ActivationTypes.LINEAR: return Activation.Linear.Derivative(value);
-                    case ActivationTypes.SIGMOID: return Activation.Sigmoid.Derivative(value);
-                    case ActivationTypes.TANH: return Activation.TanH.Derivative(value);
-                    case ActivationTypes.RELU: return Activation.ReLU.Derivative(value);
+                    case ActivationType.LINEAR: return Activation.Linear.Derivative(value);
+                    case ActivationType.SIGMOID: return Activation.Sigmoid.Derivative(value);
+                    case ActivationType.TANH: return Activation.TanH.Derivative(value);
+                    case ActivationType.RELU: return Activation.ReLU.Derivative(value);
                     default: throw new NotImplementedException();
                 }
             }
@@ -338,10 +338,10 @@ namespace AI
             {
                 switch (ActivationType)
                 {
-                    case ActivationTypes.LINEAR: return Activation.Linear.Default(value);
-                    case ActivationTypes.SIGMOID: return Activation.Sigmoid.Default(value);
-                    case ActivationTypes.TANH: return Activation.TanH.Default(value);
-                    case ActivationTypes.RELU: return Activation.ReLU.Default(value);
+                    case ActivationType.LINEAR: return Activation.Linear.Default(value);
+                    case ActivationType.SIGMOID: return Activation.Sigmoid.Default(value);
+                    case ActivationType.TANH: return Activation.TanH.Default(value);
+                    case ActivationType.RELU: return Activation.ReLU.Default(value);
                     default: throw new NotImplementedException();
                 }
             }
@@ -428,7 +428,7 @@ namespace AI
             }
         }
 
-        public enum ActivationTypes
+        public enum ActivationType
         {
             LINEAR,
             SIGMOID,

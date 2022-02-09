@@ -158,55 +158,42 @@ namespace AI
                         }
                         else if (i != 0)
                         {
-                            //double sum = 0.0;
-
-                            //for (int k = 0; k < Layers[i + 1].NeuronsNumber; k++)
-                            //{
-                            //    sum += Layers[i + 1].DeltaNodes[pattern][k] * Layers[i + 1].Weights[k, j];
-                            //}
-
-                            //Layers[i].DeltaNodes[pattern][j] = sum * Layers[i].DNodes[pattern][j];
-
                             Layers[i].DeltaNodes[pattern] = Matrix.Dot(Matrix.Dot(Matrix.Diagonal(Layers[i].DNodes[pattern]), Layers[i + 1].Weights), Layers[i + 1].DeltaNodes[pattern]);
                         }
 
-                        //if (i != 0)
-                        //{
-                        //    //for (int k = 0; k < Layers[i].LastLayerNeuronsNumber; k++)
-                        //    //{
-                        //    //    Layers[i].DWeights[pattern][j, k] = Layers[i].DeltaNodes[pattern][j] * Layers[i - 1].Outputs[k];
-                        //    //}
-                        //    //Console.WriteLine(Matrix.Dot(Matrix.Transpose(Layers[i - 1].Outputs), Matrix.Transpose(Layers[i].DeltaNodes[pattern])));
-                        //    //Console.WriteLine();
-                        //    //Layers[i].DWeights[pattern] = Matrix.Dot(Matrix.Transpose(Layers[i].DeltaNodes[pattern]), Matrix.Transpose(Layers[i - 1].Outputs));
-                        //}
-
-                        for (int j = 0; j < Layers[i].NeuronsNumber; j++)
+                        if (i != 0)
                         {
-                            if (i == Layers.Count - 1)
-                            {
-                                //Layers[i].DeltaNodes[pattern][j] = dErrors[j] * Layers[i].DNodes[pattern][j];
-                            }
-                            else if (i != 0)
-                            {
-                                //double sum = 0.0;
-
-                                //for (int k = 0; k < Layers[i + 1].NeuronsNumber; k++)
-                                //{
-                                //    sum += Layers[i + 1].DeltaNodes[pattern][k] * Layers[i + 1].Weights[k, j];
-                                //}
-
-                                //Layers[i].DeltaNodes[pattern][j] = sum * Layers[i].DNodes[pattern][j];
-                            }
-
-                            if (i != 0)
-                            {
-                                for (int k = 0; k < Layers[i].LastLayerNeuronsNumber; k++)
-                                {
-                                    Layers[i].DWeights[pattern][j, k] = Layers[i].DeltaNodes[pattern][j] * Layers[i - 1].Outputs[k];
-                                }
-                            }
+                            Layers[i].DWeights[pattern] = Matrix.Outer(Layers[i].DeltaNodes[pattern], Layers[i - 1].Outputs);
                         }
+
+                        #region
+                        //for (int j = 0; j < Layers[i].NeuronsNumber; j++)
+                        //{
+                        //    if (i == Layers.Count - 1)
+                        //    {
+                        //        //Layers[i].DeltaNodes[pattern][j] = dErrors[j] * Layers[i].DNodes[pattern][j];
+                        //    }
+                        //    else if (i != 0)
+                        //    {
+                        //        //double sum = 0.0;
+
+                        //        //for (int k = 0; k < Layers[i + 1].NeuronsNumber; k++)
+                        //        //{
+                        //        //    sum += Layers[i + 1].DeltaNodes[pattern][k] * Layers[i + 1].Weights[k, j];
+                        //        //}
+
+                        //        //Layers[i].DeltaNodes[pattern][j] = sum * Layers[i].DNodes[pattern][j];
+                        //    }
+
+                        //    if (i != 0)
+                        //    {
+                        //        //for (int k = 0; k < Layers[i].LastLayerNeuronsNumber; k++)
+                        //        //{
+                        //        //    Layers[i].DWeights[pattern][j, k] = Layers[i].DeltaNodes[pattern][j] * Layers[i - 1].Outputs[k];
+                        //        //}
+                        //    }
+                        //}
+                        #endregion
                     }
                 }
 
@@ -214,15 +201,20 @@ namespace AI
                 {
                     for (int i = 1; i < Layers.Count; i++)
                     {
-                        for (int j = 0; j < Layers[i].NeuronsNumber; j++)
-                        {
-                            for (int k = 0; k < Layers[i].LastLayerNeuronsNumber; k++)
-                            {
-                                Layers[i].Weights[j, k] -= Layers[i].DWeights[pattern][j, k] * learningRate;
-                            }
+                        #region
+                        //for (int j = 0; j < Layers[i].NeuronsNumber; j++)
+                        //{
+                        //    for (int k = 0; k < Layers[i].LastLayerNeuronsNumber; k++)
+                        //    {
+                        //        Layers[i].Weights[j, k] -= Layers[i].DWeights[pattern][j, k] * learningRate;
+                        //    }
 
-                            Layers[i].Biases[j] -= Layers[i].DeltaNodes[pattern][j] * learningRate;
-                        }
+                        //    Layers[i].Biases[j] -= Layers[i].DeltaNodes[pattern][j] * learningRate;
+                        //}
+                        #endregion
+
+                        Layers[i].Weights = Layers[i].Weights.Subtract(Layers[i].DWeights[pattern].Multiply(learningRate));
+                        Layers[i].Biases = Layers[i].Biases.Subtract(Layers[i].DeltaNodes[pattern].Multiply(learningRate));
                     }
                 }
 
@@ -339,12 +331,14 @@ namespace AI
 
                 for (int i = 0; i < NeuronsNumber; i++)
                 {
+                    #region
                     //Outputs[i] = 0.0;
                     //for (int j = 0; j < LastLayerNeuronsNumber; j++)
                     //{
                     //    Outputs[i] += inputs[j] * Weights[i, j];
                     //}
                     //Outputs[i] += Biases[i];
+                    #endregion
 
                     Outputs[i] = Activate(Outputs[i]);
 
@@ -398,7 +392,7 @@ namespace AI
             }
         }
 
-        public class Activation
+        public static class Activation
         {
             public static class Linear
             {

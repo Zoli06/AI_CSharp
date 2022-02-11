@@ -7,7 +7,7 @@ namespace AI
     {
         static void Main(string[] args)
         {
-            List<int> dimensions = new() { 2, 2, 4 };
+            List<int> structure = new() { 2, 2, 4 };
 
             // First output: xor
             // Second output: xnor
@@ -21,25 +21,26 @@ namespace AI
                 { new double[] { 0, 0 }, new double[] { 0, 1, 0, 0 } },
             };
 
-            NeuralNetwork nn = new("D:/Users/zolix/Downloads/export.nns");
+            //NeuralNetwork nn = new("D:/Users/zolix/Downloads/export.nns");
+            NeuralNetwork nn = new(structure, NeuralNetwork.ActivationType.SIGMOID);
 
-            //nn.BackPropagate(patterns, 2000, .4);
+            nn.BackPropagate(patterns, 2000, .4);
 
             Console.WriteLine("Outputs\n");
 
             for (int i = 0; i < patterns.GetLength(0); i++)
             {
-                nn.Inputs = patterns[i, 0];
-                nn.Update();
-                nn.Update();
+                nn.Update(patterns[i, 0]);
                 Console.WriteLine("Input:");
-                Console.WriteLine(nn.Inputs[0]);
-                Console.WriteLine(nn.Inputs[1]);
+                for (int j = 0; j < patterns[i,0].GetLength(0); j++)
+                {
+                    Console.WriteLine(patterns[i, 0][j]);
+                }
                 Console.WriteLine("Output:");
-                Console.WriteLine(nn.Layers[nn.Layers.Count - 1].Outputs[0]);
-                Console.WriteLine(nn.Layers[nn.Layers.Count - 1].Outputs[1]);
-                Console.WriteLine(nn.Layers[nn.Layers.Count - 1].Outputs[2]);
-                Console.WriteLine(nn.Layers[nn.Layers.Count - 1].Outputs[3]);
+                for (int j = 0; j < nn.Outputs.GetLength(0); j++)
+                {
+                    Console.WriteLine(nn.Outputs[j]);
+                }
                 Console.WriteLine();
             }
 

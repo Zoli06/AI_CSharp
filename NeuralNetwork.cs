@@ -10,18 +10,6 @@ namespace AI
     {
         public List<Layer> Layers { get; set; }
 
-        public double[] Inputs
-        {
-            get
-            {
-                return Layers[0].Outputs;
-            }
-            set
-            {
-                Layers[0].Outputs = value;
-            }
-        }
-
         public double[] Outputs
         {
             get
@@ -110,8 +98,10 @@ namespace AI
             }
         }
 
-        public double[] Update()
+        public double[] Update(double[] inputs)
         {
+            Layers[0].Outputs = inputs;
+
             // Skip input layer
             for (int i = 1; i < Layers.Count; i++)
             {
@@ -134,8 +124,7 @@ namespace AI
 
                 for (int pattern = 0; pattern < patterns.GetLength(0); pattern++)
                 {
-                    Inputs = patterns[pattern, 0];
-                    double[] outputs = Update();
+                    double[] outputs = Update(patterns[pattern, 0]);
 
                     double[] errors = new double[outputs.Length];
                     double[] dErrors = new double[outputs.Length];

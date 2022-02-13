@@ -4,6 +4,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using System.IO;
 using Accord.Math;
+using OpenCL;
 
 namespace AI
 {

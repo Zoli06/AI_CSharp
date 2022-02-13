@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using OpenCL.Net;
+using System.Runtime.Serialization;
 
 namespace AI
 {
@@ -7,6 +9,9 @@ namespace AI
     {
         static void Main(string[] args)
         {
+            Gpu computeContext = new();
+            computeContext.Setup();
+
             List<int> structure = new() { 2, 2, 4 };
 
             // First output: xor
@@ -24,7 +29,7 @@ namespace AI
             //NeuralNetwork nn = new("D:/Users/zolix/Downloads/export.nns");
             NeuralNetwork nn = new(structure, NeuralNetwork.ActivationType.SIGMOID);
 
-            nn.BackPropagate(patterns, 2000, .4);
+            nn.BackPropagate(patterns, 2000, .25);
 
             Console.WriteLine("Outputs\n");
 

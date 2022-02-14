@@ -10,7 +10,7 @@ namespace AI
         static void Main(string[] args)
         {
             Gpu computeContext = new();
-            computeContext.Setup();
+            //computeContext.Setup();
             computeContext.Dot();
 
             List<int> structure = new() { 2, 2, 4 };

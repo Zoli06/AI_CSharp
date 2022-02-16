@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using MathNet.Numerics.LinearAlgebra;
 
 namespace AI
 {
@@ -7,24 +6,25 @@ namespace AI
     {
         static void Main(string[] args)
         {
+            VectorBuilder<double> _v = Vector<double>.Build;
             List<int> structure = new() { 2, 2, 4 };
 
             // First output: xor
             // Second output: xnor
             // Third output: and
             // Fourth output: or
-            double[,][] patterns =
+            Vector<double>[,] patterns =
             {
-                { new double[] { 0, 1 }, new double[] { 1, 0, 0, 1 } },
-                { new double[] { 1, 0 }, new double[] { 1, 0, 0, 1 } },
-                { new double[] { 1, 1 }, new double[] { 0, 1, 1, 1 } },
-                { new double[] { 0, 0 }, new double[] { 0, 1, 0, 0 } },
+                { _v.DenseOfArray(new double[] { 0, 1 }), _v.DenseOfArray(new double[] { 1, 0, 0, 1 }) },
+                { _v.DenseOfArray(new double[] { 1, 0 }), _v.DenseOfArray(new double[] { 1, 0, 0, 1 }) },
+                { _v.DenseOfArray(new double[] { 1, 1 }), _v.DenseOfArray(new double[] { 0, 1, 1, 1 }) },
+                { _v.DenseOfArray(new double[] { 0, 0 }), _v.DenseOfArray(new double[] { 0, 1, 0, 0 }) },
             };
 
             //NeuralNetwork nn = new("D:/Users/zolix/Downloads/export.nns");
-            NeuralNetwork nn = new(structure, NeuralNetwork.ActivationType.SIGMOID);
+            NeuralNetwork nn = new(structure, NeuralNetwork.ActivationType.TANH);
 
-            nn.BackPropagate(patterns, 2000, .4);
+            nn.BackPropagate(patterns, 2000, .25);
 
             Console.WriteLine("Outputs\n");
 
@@ -32,12 +32,12 @@ namespace AI
             {
                 nn.Update(patterns[i, 0]);
                 Console.WriteLine("Input:");
-                for (int j = 0; j < patterns[i,0].GetLength(0); j++)
+                for (int j = 0; j < patterns[i, 0].Count; j++)
                 {
                     Console.WriteLine(patterns[i, 0][j]);
                 }
                 Console.WriteLine("Output:");
-                for (int j = 0; j < nn.Outputs.GetLength(0); j++)
+                for (int j = 0; j < nn.Outputs.Count; j++)
                 {
                     Console.WriteLine(nn.Outputs[j]);
                 }

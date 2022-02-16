@@ -1,4 +1,7 @@
-﻿using MathNet.Numerics.LinearAlgebra;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
+using MathNet.Numerics.LinearAlgebra;
 
 namespace AI
 {

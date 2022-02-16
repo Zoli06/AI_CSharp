@@ -161,18 +161,6 @@ namespace AI
                 {
                     for (int i = 1; i < Layers.Count; i++)
                     {
-                        #region
-                        //for (int j = 0; j < Layers[i].NeuronsNumber; j++)
-                        //{
-                        //    for (int k = 0; k < Layers[i].LastLayerNeuronsNumber; k++)
-                        //    {
-                        //        Layers[i].Weights[j, k] -= Layers[i].DWeights[pattern][j, k] * learningRate;
-                        //    }
-
-                        //    Layers[i].Biases[j] -= Layers[i].DeltaNodes[pattern][j] * learningRate;
-                        //}
-                        #endregion
-
                         Layers[i].Weights -= Layers[i].DWeights[pattern] * learningRate;
                         Layers[i].Biases -= Layers[i].DeltaNodes[pattern] * learningRate;
                     }
@@ -275,15 +263,6 @@ namespace AI
 
                 for (int i = 0; i < NeuronsNumber; i++)
                 {
-                    #region
-                    //Outputs[i] = 0.0;
-                    //for (int j = 0; j < LastLayerNeuronsNumber; j++)
-                    //{
-                    //    Outputs[i] += inputs[j] * Weights[i, j];
-                    //}
-                    //Outputs[i] += Biases[i];
-                    #endregion
-
                     Outputs[i] = Activate(Outputs[i]);
 
                     DNodes[DNodes.Count - 1][i, i] = Derivative(Outputs[i]);

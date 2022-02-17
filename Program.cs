@@ -27,7 +27,8 @@ namespace AI
             //NeuralNetwork nn = new("D:/Users/zolix/Downloads/export.nns");
             NeuralNetwork nn = new(structure, NeuralNetwork.ActivationType.TANH);
 
-            nn.BackPropagate(patterns, 2000, .25);
+            //nn.BackPropagateOnline(patterns, .2, 2, .5, 2000);
+            nn.BackPropagateOnline(patterns, .2, 2000);
 
             Console.WriteLine("Outputs\n");
 

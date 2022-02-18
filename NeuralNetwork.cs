@@ -115,30 +115,43 @@ namespace AI
             }
 
             int trainedForPatternsNum = 0;
+            double totalError = 0;
+
             ulong epoch;
             for (epoch = 0; epoch < maxEpoches; epoch++)
             {
-                BackPropagateForPatterns(patterns, learningRate, trainedForPatternsNum, trainedForPatternsNum + patternPerEpoch);
+                totalError += BackPropagateForPatterns(patterns, learningRate, trainedForPatternsNum, trainedForPatternsNum + patternPerEpoch);
 
                 trainedForPatternsNum += patternPerEpoch;
-                if (patterns.GetLength(0) % trainedForPatternsNum == 0) trainedForPatternsNum = 0;
+                if (patterns.GetLength(0) == trainedForPatternsNum)
+                {
+                    trainedForPatternsNum = 0;
+                    if (totalError <= targetError) break;
+                    totalError = 0;
+                }
             }
 
             Console.WriteLine(epoch);
+            Console.WriteLine(totalError);
         }
 
-        public void BackPropagateOnline(Vector<double>[,] patterns, double learningRate, ulong epoches)
+        public void BackPropagateOffline(Vector<double>[,] patterns, double learningRate, double targetError, ulong maxEpoches = ulong.MaxValue)
         {
+            double totalError = 0;
+
             ulong epoch;
-            for (epoch = 0; epoch < epoches; epoch++)
+            for (epoch = 0; epoch < maxEpoches; epoch++)
             {
-                BackPropagateForPatterns(patterns, learningRate);
+                totalError = BackPropagateForPatterns(patterns, learningRate);
+                
+                if (totalError <= targetError) break;
             }
 
             Console.WriteLine(epoch);
+            Console.WriteLine(totalError);
         }
 
-        private void BackPropagateForPatterns(Vector<double>[,] patterns, double learningRate, int fromPattern = 0, int? toPattern = null)
+        private double BackPropagateForPatterns(Vector<double>[,] patterns, double learningRate, int fromPattern = 0, int? toPattern = null)
         {
             toPattern ??= patterns.GetLength(0);
 
@@ -146,8 +159,7 @@ namespace AI
             {
                 throw new Exception("ToPattern can\' be bigger than patterns num");
             }
-            //for (int epoch = 0; epoch < epoches; epoch++)
-            //{
+            
             for (int i = 0; i < Layers.Count; i++)
             {
                 Layers[i].DNodes.Clear();
@@ -155,7 +167,14 @@ namespace AI
                 Layers[i].DeltaNodes.Clear();
             }
 
-            for (int patternNum = fromPattern; patternNum < toPattern; patternNum++)
+            double errorSum = 0;
+
+            //Console.WriteLine(fromPattern);
+            //Console.WriteLine(toPattern);
+            //Console.WriteLine();
+
+            int patternNum2 = 0;
+            for (int patternNum = fromPattern; patternNum < toPattern; patternNum++, patternNum2++)
             {
                 Vector<double> outputs = Update(patterns[patternNum, 0]);
 
@@ -168,6 +187,8 @@ namespace AI
                     dErrors[i] = outputs[i] - patterns[patternNum, 1][i];
                 }
 
+                errorSum += errors.Sum();
+
                 for (int i = Layers.Count - 1; i >= 0; i--)
                 {
                     Layers[i].DWeights.Add(_m.Dense(Layers[i].NeuronsNumber, Layers[i].LastLayerNeuronsNumber));
@@ -175,28 +196,31 @@ namespace AI
 
                     if (i == Layers.Count - 1)
                     {
-                        Layers[i].DeltaNodes[patternNum] = dErrors * Layers[i].DNodes[patternNum];
+                        Layers[i].DeltaNodes[patternNum2] = dErrors * Layers[i].DNodes[patternNum2];
                     }
                     else if (i != 0)
                     {
-                        Layers[i].DeltaNodes[patternNum] = Layers[i + 1].DeltaNodes[patternNum] * Layers[i + 1].Weights * Layers[i].DNodes[patternNum];
+                        Layers[i].DeltaNodes[patternNum2] = Layers[i + 1].DeltaNodes[patternNum2] * Layers[i + 1].Weights * Layers[i].DNodes[patternNum2];
                     }
 
                     if (i != 0)
                     {
-                        Layers[i].DWeights[patternNum] = Layers[i].DeltaNodes[patternNum].OuterProduct(Layers[i - 1].Outputs);
+                        Layers[i].DWeights[patternNum2] = Layers[i].DeltaNodes[patternNum2].OuterProduct(Layers[i - 1].Outputs);
                     }
                 }
             }
 
-            for (int patternNum = 0; patternNum < toPattern; patternNum++)
+            patternNum2 = 0;
+            for (int patternNum = fromPattern; patternNum < toPattern; patternNum++, patternNum2++)
             {
                 for (int i = 1; i < Layers.Count; i++)
                 {
-                    Layers[i].Weights -= Layers[i].DWeights[patternNum] * learningRate;
-                    Layers[i].Biases -= Layers[i].DeltaNodes[patternNum] * learningRate;
+                    Layers[i].Weights -= Layers[i].DWeights[patternNum2] * learningRate;
+                    Layers[i].Biases -= Layers[i].DeltaNodes[patternNum2] * learningRate;
                 }
             }
+
+            return errorSum;
 
             //if (epoch % 100 == 0)
             //{

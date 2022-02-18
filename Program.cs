@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using MathNet.Numerics.LinearAlgebra;
+using System.Diagnostics;
 
 namespace AI
 {
@@ -27,8 +28,11 @@ namespace AI
             //NeuralNetwork nn = new("D:/Users/zolix/Downloads/export.nns");
             NeuralNetwork nn = new(structure, NeuralNetwork.ActivationType.TANH);
 
-            //nn.BackPropagateOnline(patterns, .2, 2, .5, 2000);
-            nn.BackPropagateOnline(patterns, .2, 2000);
+            Stopwatch sw = Stopwatch.StartNew();
+            nn.BackPropagateOffline(patterns, .2, 0, 2000);
+            //nn.BackPropagateOnline(patterns, .2, 2, .5, 100000);
+            sw.Stop();
+            Console.WriteLine(sw.ElapsedMilliseconds);
 
             Console.WriteLine("Outputs\n");
 

@@ -7,11 +7,11 @@ using System.Linq;
 
 namespace AI
 {
-    public class NeuralNetwork
+    public partial class NeuralNetwork
     {
         public List<Layer> Layers { get; set; }
-        private static MatrixBuilder<double> _m = Matrix<double>.Build;
-        private static VectorBuilder<double> _v = Vector<double>.Build;
+        public static MatrixBuilder<double> _m = Matrix<double>.Build;
+        public static VectorBuilder<double> _v = Vector<double>.Build;
 
         public Vector<double> Outputs
         {
@@ -31,9 +31,9 @@ namespace AI
             Layers = layers;
         }
 
-        public NeuralNetwork(List<int> structure, ActivationType activationType)
+        public NeuralNetwork(List<int> structure, Layer.ActivationType activationType)
         {
-            List<ActivationType> _activationTypes = new List<ActivationType> { ActivationType.LINEAR };
+            List<Layer.ActivationType> _activationTypes = new List<Layer.ActivationType> { Layer.ActivationType.LINEAR };
 
             for (int i = 0; i < structure.Count; i++)
             {
@@ -43,7 +43,7 @@ namespace AI
             Build(structure, _activationTypes);
         }
 
-        public NeuralNetwork(List<int> structure, List<ActivationType> activationTypes)
+        public NeuralNetwork(List<int> structure, List<Layer.ActivationType> activationTypes)
         {
             Build(structure, activationTypes);
         }
@@ -56,19 +56,19 @@ namespace AI
 
             List<double[,]> weights = new();
             List<double[]> biases = new();
-            List<ActivationType> activationTypes = new();
+            List<Layer.ActivationType> activationTypes = new();
 
             for (int i = 0; i < a.layers.Count; i++)
             {
                 weights.Add(a.layers[i].weights.ToObject<double[,]>());
                 biases.Add(a.layers[i].biases.ToObject<double[]>());
-                activationTypes.Add(a.layers[i].activationType.ToObject<ActivationType>());
+                activationTypes.Add(a.layers[i].activationType.ToObject<Layer.ActivationType>());
             }
 
             Build(weights, biases, activationTypes);
         }
 
-        private void Build(List<int> structure, List<ActivationType> activationTypes)
+        private void Build(List<int> structure, List<Layer.ActivationType> activationTypes)
         {
             Layers = new List<Layer>();
 
@@ -80,7 +80,7 @@ namespace AI
             }
         }
 
-        private void Build(List<double[,]> weights, List<double[]> biases, List<ActivationType> activationTypes)
+        private void Build(List<double[,]> weights, List<double[]> biases, List<Layer.ActivationType> activationTypes)
         {
             Layers = new List<Layer>();
 
@@ -238,7 +238,7 @@ namespace AI
                     isInputLayer = index == 0,
                     weights = item.Weights.ToArray(),
                     biases = item.Biases.ToArray(),
-                    activationType = item.ActivationType
+                    activationType = item.LayerActivationType
                 })
             };
 
@@ -267,7 +267,7 @@ namespace AI
                 }
             }
 
-            public static Vector<double> Derivatve(Vector<double> outputs, Vector<double> patterns, LossType lossType)
+            public static Vector<double> Derivative(Vector<double> outputs, Vector<double> patterns, LossType lossType)
             {
                 switch (lossType)
                 {
@@ -296,238 +296,6 @@ namespace AI
         public enum LossType
         {
             SQUAREERROR
-        }
-
-        public class Layer
-        {
-            protected internal Matrix<double> Weights { get; set; }
-            protected internal Vector<double> Biases { get; set; }
-            protected internal Vector<double> Outputs { get; set; }
-            // Diagonal matrix
-            protected internal List<Matrix<double>> DNodes { get; set; }
-            protected internal List<Matrix<double>> DWeights { get; set; }
-            protected internal List<Vector<double>> DeltaNodes { get; set; }
-            protected internal ActivationType ActivationType { get; set; }
-
-            public int NeuronsNumber
-            {
-                get
-                {
-                    return Weights.RowCount;
-                }
-            }
-            public int LastLayerNeuronsNumber
-            {
-                get
-                {
-                    return Weights.ColumnCount;
-                }
-            }
-
-            public Layer(int neuronsNumber, int lastLayerNeuronsNumber, ActivationType activationType)
-            {
-                Weights = _m.Random(neuronsNumber, lastLayerNeuronsNumber);
-                Biases = _v.Dense(neuronsNumber);
-                Outputs = _v.Dense(neuronsNumber);
-                DNodes = new();
-                DWeights = new();
-                DeltaNodes = new();
-
-                ActivationType = activationType;
-            }
-
-            public Layer(double[,] weights, double[] biases, ActivationType activationType)
-            {
-                Weights = _m.DenseOfArray(weights);
-                Biases = _v.DenseOfArray(biases);
-                Outputs = _v.Dense(NeuronsNumber);
-                DNodes = new();
-                DWeights = new();
-                DeltaNodes = new();
-
-                ActivationType = activationType;
-            }
-
-            public Vector<double> Update(Vector<double> inputs)
-            {
-                Outputs = _v.Dense(NeuronsNumber);
-
-                DNodes.Add(_m.Diagonal(NeuronsNumber, NeuronsNumber));
-
-                Outputs = Activate.Default(Weights * inputs + Biases, ActivationType);
-
-                DNodes[DNodes.Count - 1] = Activate.Derivative(Outputs, ActivationType);
-
-                return Outputs;
-            }
-
-            public static class Activate
-            {
-                public static Vector<double> Default(Vector<double> value, ActivationType activationType)
-                {
-                    switch (activationType)
-                    {
-                        case ActivationType.LINEAR: return Activation.Linear.Default(value);
-                        case ActivationType.SIGMOID: return Activation.Sigmoid.Default(value);
-                        case ActivationType.TANH: return Activation.TanH.Default(value);
-                        case ActivationType.RELU: return Activation.ReLU.Default(value);
-                        case ActivationType.SOFTMAX: return Activation.SoftMax.Default(value);
-                        default: throw new NotImplementedException();
-                    }
-                }
-
-                public static Matrix<double> Derivative(Vector<double> value, ActivationType activationType)
-                {
-                    switch (activationType)
-                    {
-                        case ActivationType.LINEAR: return Activation.Linear.Derivative(value);
-                        case ActivationType.SIGMOID: return Activation.Sigmoid.Derivative(value);
-                        case ActivationType.TANH: return Activation.TanH.Derivative(value);
-                        case ActivationType.RELU: return Activation.ReLU.Derivative(value);
-                        case ActivationType.SOFTMAX: return Activation.SoftMax.Derivative(value);
-                        default: throw new NotImplementedException();
-                    }
-                }
-            }
-
-            public override string ToString()
-            {
-                string str = "";
-
-                for (int i = 0; i < NeuronsNumber; i++)
-                {
-                    string _weights = "(";
-                    for (int j = 0; j < LastLayerNeuronsNumber; j++)
-                    {
-                        _weights += $"{Weights[i, j]}, ";
-                    }
-                    _weights += ")";
-
-                    str += $"({_weights}, {Biases[i]}, {Outputs[i]})\n";
-                }
-
-                return str;
-            }
-        }
-
-        public static class Activation
-        {
-            public static class Linear
-            {
-                public static Vector<double> Default(Vector<double> value)
-                {
-                    return value;
-                }
-
-                public static Matrix<double> Derivative(Vector<double> value)
-                {
-                    return _m.DenseDiagonal(value.Count, value.Count, 1.0);
-                }
-            }
-
-            public static class Sigmoid
-            {
-                public static Vector<double> Default(Vector<double> value)
-                {
-                    return 1.0 / (1.0 + value.PointwiseExp());
-                }
-
-                public static Matrix<double> Derivative(Vector<double> value)
-                {
-                    Matrix<double> result = _m.DenseDiagonal(value.Count, value.Count);
-
-                    for (int i = 0; i < value.Count; i++)
-                    {
-                        result[i, i] = value * (1.0 - value);
-                    }
-
-                    return result;
-                }
-            }
-
-            public static class TanH
-            {
-                public static Vector<double> Default(Vector<double> value)
-                {
-                    return value.PointwiseTanh();
-                }
-
-                public static Matrix<double> Derivative(Vector<double> value)
-                {
-                    Matrix<double> result = _m.DenseDiagonal(value.Count, value.Count);
-
-                    for (int i = 0; i < value.Count; i++)
-                    {
-                        result[i, i] = 1.0 - Math.Pow(Math.Tanh(value[i]), 2);
-                    }
-
-                    return result;
-                }
-            }
-
-            public static class ReLU
-            {
-                public static Vector<double> Default(Vector<double> value)
-                {
-                    Vector<double> result = _v.Dense(value.Count);
-
-                    for (int i = 0; i < value.Count; i++)
-                    {
-                        result[i] = Math.Max(value[i], 0.0);
-                    }
-                    return result;
-                }
-
-                public static Matrix<double> Derivative(Vector<double> value)
-                {
-                    Matrix<double> result = _m.Dense(value.Count, value.Count);
-
-                    for (int i = 0; i < value.Count; i++)
-                    {
-                        result[i, i] = value[i] >= 0.0 ? 1.0 : 0.0;
-                    }
-
-                    return result;
-                }
-            }
-
-            public static class SoftMax
-            {
-                public static Vector<double> Default(Vector<double> value)
-                {
-                    Vector<double> shiftValue = value - value.Maximum();
-                    Vector<double> exps = shiftValue.PointwiseExp();
-                    return exps / exps.Sum();
-                }
-
-                public static Matrix<double> Derivative(Vector<double> value)
-                {
-                    //softmax derivate is a matrix:
-                    //[i,j] : how much the ith element in the output vector changes if we change the jth element
-                    Matrix<double> result = _m.Dense(value.Count, value.Count);
-
-                    Vector<double> softmax = Default(value);
-
-                    for (int i = 0; i < value.Count; i++)
-                    {
-                        for (int j = 0; j < value.Count; j++)
-                        {
-                            result[i, j] = softmax[i] * ((i == j).ToInt() - softmax[j]);
-                        }
-                    }
-
-                    return result;
-                }
-            }
-        }
-
-        public enum ActivationType
-        {
-            LINEAR,
-            SIGMOID,
-            TANH,
-            RELU,
-            SOFTMAX
         }
     }
 }

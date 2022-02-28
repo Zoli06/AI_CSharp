@@ -1,4 +1,8 @@
 ﻿using MathNet.Numerics.LinearAlgebra;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 
 namespace AI
 {
@@ -171,7 +175,7 @@ namespace AI
 
             //Console.WriteLine("Formatted training set");
 
-            NeuralNetwork nn = new(new List<int> { 784, 128, 10, 10 }, new List<NeuralNetwork.ActivationType> { NeuralNetwork.ActivationType.LINEAR, NeuralNetwork.ActivationType.TANH, NeuralNetwork.ActivationType.TANH, NeuralNetwork.ActivationType.SIGMOID });
+            NeuralNetwork nn = new(new List<int> { 784, 128, 10, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.TANH, NeuralNetwork.Layer.ActivationType.TANH, NeuralNetwork.Layer.ActivationType.SIGMOID });
 
             //Console.WriteLine(nn.Update(mnistFormattedTrainingSet[100, 0]));
 

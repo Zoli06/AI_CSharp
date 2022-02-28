@@ -1,9 +1,5 @@
 using MathNet.Numerics.LinearAlgebra;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace AI
 {
@@ -107,12 +103,11 @@ namespace AI
 
         public void BackPropagateOnline(Vector<double>[,] patterns, double learningRate, int patternPerEpoch, double targetError, ulong maxEpoches = ulong.MaxValue)
         {
-            //TODO: Implement targeterror
-
             if (patterns.GetLength(0) % patternPerEpoch != 0)
             {
                 throw new Exception("Patterns number must be dividable by patternPerEpoch");
             }
+
 
             int trainedForPatternsNum = 0;
             double totalError = 0;
@@ -128,11 +123,12 @@ namespace AI
                     trainedForPatternsNum = 0;
                     if (totalError <= targetError) break;
                     totalError = 0;
+                    //Console.WriteLine(epoch);
                 }
             }
 
-            Console.WriteLine(epoch);
-            Console.WriteLine(totalError);
+            //Console.WriteLine(epoch);
+            //Console.WriteLine(totalError);
         }
 
         public void BackPropagateOffline(Vector<double>[,] patterns, double learningRate, double targetError, ulong maxEpoches = ulong.MaxValue)
@@ -143,12 +139,15 @@ namespace AI
             for (epoch = 0; epoch < maxEpoches; epoch++)
             {
                 totalError = BackPropagateForPatterns(patterns, learningRate);
-                
+
+                Console.WriteLine(epoch);
+
                 if (totalError <= targetError) break;
             }
 
-            Console.WriteLine(epoch);
-            Console.WriteLine(totalError);
+            //Console.WriteLine();
+            Console.WriteLine("Epoch: " + epoch);
+            //Console.WriteLine(totalError);
         }
 
         private double BackPropagateForPatterns(Vector<double>[,] patterns, double learningRate, int fromPattern = 0, int? toPattern = null)
@@ -159,7 +158,7 @@ namespace AI
             {
                 throw new Exception("ToPattern can\' be bigger than patterns num");
             }
-            
+
             for (int i = 0; i < Layers.Count; i++)
             {
                 Layers[i].DNodes.Clear();
@@ -239,13 +238,13 @@ namespace AI
                 layers = Layers.Select((item, index) => new
                 {
                     isInputLayer = index == 0,
-                    weights = item.Weights,
-                    biases = item.Biases,
+                    weights = item.Weights.ToArray(),
+                    biases = item.Biases.ToArray(),
                     activationType = item.ActivationType
                 })
             };
 
-            File.WriteAllTextAsync(path, JsonConvert.SerializeObject(datas));
+            File.WriteAllText(path, JsonConvert.SerializeObject(datas));
         }
 
         public override string ToString()
@@ -287,7 +286,7 @@ namespace AI
 
             public Layer(int neuronsNumber, int lastLayerNeuronsNumber, ActivationType activationType)
             {
-                Weights = _m.Random(neuronsNumber, lastLayerNeuronsNumber) * 2 - 1;
+                Weights = _m.Random(neuronsNumber, lastLayerNeuronsNumber);
                 Biases = _v.Dense(neuronsNumber);
                 Outputs = _v.Dense(neuronsNumber);
                 DNodes = new();
@@ -315,14 +314,9 @@ namespace AI
 
                 DNodes.Add(_m.Diagonal(NeuronsNumber, NeuronsNumber));
 
-                Outputs = Weights * inputs + Biases;
+                Outputs = Activate(Weights * inputs + Biases);
 
-                for (int i = 0; i < NeuronsNumber; i++)
-                {
-                    Outputs[i] = Activate(Outputs[i]);
-
-                    DNodes[DNodes.Count - 1][i, i] = Derivative(Outputs[i]);
-                }
+                DNodes[DNodes.Count - 1] = _m.DiagonalOfDiagonalVector(Derivative(Outputs));
 
                 return Outputs;
             }
@@ -339,7 +333,31 @@ namespace AI
                 }
             }
 
+            public Vector<double> Derivative(Vector<double> value)
+            {
+                switch (ActivationType)
+                {
+                    case ActivationType.LINEAR: return Activation.Linear.Derivative(value);
+                    case ActivationType.SIGMOID: return Activation.Sigmoid.Derivative(value);
+                    case ActivationType.TANH: return Activation.TanH.Derivative(value);
+                    case ActivationType.RELU: return Activation.ReLU.Derivative(value);
+                    default: throw new NotImplementedException();
+                }
+            }
+
             public double Activate(double value)
+            {
+                switch (ActivationType)
+                {
+                    case ActivationType.LINEAR: return Activation.Linear.Default(value);
+                    case ActivationType.SIGMOID: return Activation.Sigmoid.Default(value);
+                    case ActivationType.TANH: return Activation.TanH.Default(value);
+                    case ActivationType.RELU: return Activation.ReLU.Default(value);
+                    default: throw new NotImplementedException();
+                }
+            }
+
+            public Vector<double> Activate(Vector<double> value)
             {
                 switch (ActivationType)
                 {
@@ -380,9 +398,31 @@ namespace AI
                     return value;
                 }
 
+                public static Vector<double> Default(Vector<double> value)
+                {
+                    Vector<double> result = _v.Dense(value.Count);
+
+                    for (int i = 0; i < result.Count; i++)
+                    {
+                        result[i] = Default(value[i]);
+                    }
+                    return result;
+                }
+
                 public static double Derivative(double value)
                 {
                     return 1.0;
+                }
+
+                public static Vector<double> Derivative(Vector<double> value)
+                {
+                    Vector<double> result = _v.Dense(value.Count);
+
+                    for (int i = 0; i < result.Count; i++)
+                    {
+                        result[i] = Derivative(value[i]);
+                    }
+                    return result;
                 }
             }
 
@@ -393,9 +433,31 @@ namespace AI
                     return 1.0 / (1.0 + Math.Exp(-value));
                 }
 
+                public static Vector<double> Default(Vector<double> value)
+                {
+                    Vector<double> result = _v.Dense(value.Count);
+
+                    for (int i = 0; i < result.Count; i++)
+                    {
+                        result[i] = Default(value[i]);
+                    }
+                    return result;
+                }
+
                 public static double Derivative(double value)
                 {
                     return value * (1.0 - value);
+                }
+
+                public static Vector<double> Derivative(Vector<double> value)
+                {
+                    Vector<double> result = _v.Dense(value.Count);
+
+                    for (int i = 0; i < result.Count; i++)
+                    {
+                        result[i] = Derivative(value[i]);
+                    }
+                    return result;
                 }
             }
 
@@ -406,9 +468,31 @@ namespace AI
                     return Math.Tanh(value);
                 }
 
+                public static Vector<double> Default(Vector<double> value)
+                {
+                    Vector<double> result = _v.Dense(value.Count);
+
+                    for (int i = 0; i < result.Count; i++)
+                    {
+                        result[i] = Default(value[i]);
+                    }
+                    return result;
+                }
+
                 public static double Derivative(double value)
                 {
                     return 1.0 - Math.Pow(Math.Tanh(value), 2);
+                }
+
+                public static Vector<double> Derivative(Vector<double> value)
+                {
+                    Vector<double> result = _v.Dense(value.Count);
+
+                    for (int i = 0; i < result.Count; i++)
+                    {
+                        result[i] = Derivative(value[i]);
+                    }
+                    return result;
                 }
             }
 
@@ -417,6 +501,17 @@ namespace AI
                 public static double Default(double value)
                 {
                     return Math.Max(0, value);
+                }
+
+                public static Vector<double> Default(Vector<double> value)
+                {
+                    Vector<double> result = _v.Dense(value.Count);
+
+                    foreach (double v in value)
+                    {
+                        result.Add(Default(v));
+                    }
+                    return result;
                 }
 
                 public static double Derivative(double value)
@@ -430,6 +525,33 @@ namespace AI
                         return 0.0;
                     }
                 }
+
+                public static Vector<double> Derivative(Vector<double> value)
+                {
+                    Vector<double> result = _v.Dense(value.Count);
+
+                    foreach (double v in value)
+                    {
+                        result.Add(Derivative(v));
+                    }
+                    return result;
+                }
+            }
+
+            public static class SoftMax
+            {
+                public static Vector<double> Default(Vector<double> value)
+                {
+                    Vector<double> shiftValue = value - value.Max();
+                    Vector<double> exps = shiftValue.PointwiseExp();
+                    return exps / exps.Sum();
+                }
+
+                //public static Matrix<double> Derivative(Vector<double> value)
+                //{
+                //    Softmax derivate is a matrix:
+                //    [i,j] : how much the ith element in the output vector changes if we change the jth element
+                //}
             }
         }
 

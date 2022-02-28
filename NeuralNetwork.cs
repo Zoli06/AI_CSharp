@@ -1,5 +1,9 @@
 using MathNet.Numerics.LinearAlgebra;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace AI
 {
@@ -177,14 +181,8 @@ namespace AI
             {
                 Vector<double> outputs = Update(patterns[patternNum, 0]);
 
-                Vector<double> errors = _v.Dense(outputs.Count);
-                Vector<double> dErrors = _v.Dense(outputs.Count);
-
-                for (int i = 0; i < outputs.Count; i++)
-                {
-                    errors[i] = Math.Pow(outputs[i] - patterns[patternNum, 1][i], 2) / 2;
-                    dErrors[i] = outputs[i] - patterns[patternNum, 1][i];
-                }
+                Vector<double> errors = Loss.Default(outputs, patterns[patternNum, 1], LossType.SQUAREERROR);
+                Vector<double> dErrors = Loss.Derivative(outputs, patterns[patternNum, 1], LossType.SQUAREERROR);
 
                 errorSum += errors.Sum();
 
@@ -258,6 +256,48 @@ namespace AI
             return str;
         }
 
+        public static class Loss
+        {
+            public static Vector<double> Default(Vector<double> outputs, Vector<double> patterns, LossType lossType)
+            {
+                switch (lossType)
+                {
+                    case LossType.SQUAREERROR: return LossFunction.SquareError.Default(outputs, patterns);
+                    default: throw new NotImplementedException();
+                }
+            }
+
+            public static Vector<double> Derivatve(Vector<double> outputs, Vector<double> patterns, LossType lossType)
+            {
+                switch (lossType)
+                {
+                    case LossType.SQUAREERROR: return LossFunction.SquareError.Derivative(outputs, patterns);
+                    default: throw new NotImplementedException();
+                }
+            }
+        }
+
+        public static class LossFunction
+        {
+            public static class SquareError
+            {
+                public static Vector<double> Default(Vector<double> outputs, Vector<double> patterns)
+                {
+                    return (outputs - patterns).PointwisePower(2) / 2;
+                }
+
+                public static Vector<double> Derivative(Vector<double> outputs, Vector<double> patterns)
+                {
+                    return outputs - patterns;
+                }
+            }
+        }
+
+        public enum LossType
+        {
+            SQUAREERROR
+        }
+
         public class Layer
         {
             protected internal Matrix<double> Weights { get; set; }
@@ -314,58 +354,39 @@ namespace AI
 
                 DNodes.Add(_m.Diagonal(NeuronsNumber, NeuronsNumber));
 
-                Outputs = Activate(Weights * inputs + Biases);
+                Outputs = Activate.Default(Weights * inputs + Biases, ActivationType);
 
-                DNodes[DNodes.Count - 1] = _m.DiagonalOfDiagonalVector(Derivative(Outputs));
+                DNodes[DNodes.Count - 1] = Activate.Derivative(Outputs, ActivationType);
 
                 return Outputs;
             }
 
-            public double Derivative(double value)
+            public static class Activate
             {
-                switch (ActivationType)
+                public static Vector<double> Default(Vector<double> value, ActivationType activationType)
                 {
-                    case ActivationType.LINEAR: return Activation.Linear.Derivative(value);
-                    case ActivationType.SIGMOID: return Activation.Sigmoid.Derivative(value);
-                    case ActivationType.TANH: return Activation.TanH.Derivative(value);
-                    case ActivationType.RELU: return Activation.ReLU.Derivative(value);
-                    default: throw new NotImplementedException();
+                    switch (activationType)
+                    {
+                        case ActivationType.LINEAR: return Activation.Linear.Default(value);
+                        case ActivationType.SIGMOID: return Activation.Sigmoid.Default(value);
+                        case ActivationType.TANH: return Activation.TanH.Default(value);
+                        case ActivationType.RELU: return Activation.ReLU.Default(value);
+                        case ActivationType.SOFTMAX: return Activation.SoftMax.Default(value);
+                        default: throw new NotImplementedException();
+                    }
                 }
-            }
 
-            public Vector<double> Derivative(Vector<double> value)
-            {
-                switch (ActivationType)
+                public static Matrix<double> Derivative(Vector<double> value, ActivationType activationType)
                 {
-                    case ActivationType.LINEAR: return Activation.Linear.Derivative(value);
-                    case ActivationType.SIGMOID: return Activation.Sigmoid.Derivative(value);
-                    case ActivationType.TANH: return Activation.TanH.Derivative(value);
-                    case ActivationType.RELU: return Activation.ReLU.Derivative(value);
-                    default: throw new NotImplementedException();
-                }
-            }
-
-            public double Activate(double value)
-            {
-                switch (ActivationType)
-                {
-                    case ActivationType.LINEAR: return Activation.Linear.Default(value);
-                    case ActivationType.SIGMOID: return Activation.Sigmoid.Default(value);
-                    case ActivationType.TANH: return Activation.TanH.Default(value);
-                    case ActivationType.RELU: return Activation.ReLU.Default(value);
-                    default: throw new NotImplementedException();
-                }
-            }
-
-            public Vector<double> Activate(Vector<double> value)
-            {
-                switch (ActivationType)
-                {
-                    case ActivationType.LINEAR: return Activation.Linear.Default(value);
-                    case ActivationType.SIGMOID: return Activation.Sigmoid.Default(value);
-                    case ActivationType.TANH: return Activation.TanH.Default(value);
-                    case ActivationType.RELU: return Activation.ReLU.Default(value);
-                    default: throw new NotImplementedException();
+                    switch (activationType)
+                    {
+                        case ActivationType.LINEAR: return Activation.Linear.Derivative(value);
+                        case ActivationType.SIGMOID: return Activation.Sigmoid.Derivative(value);
+                        case ActivationType.TANH: return Activation.TanH.Derivative(value);
+                        case ActivationType.RELU: return Activation.ReLU.Derivative(value);
+                        case ActivationType.SOFTMAX: return Activation.SoftMax.Derivative(value);
+                        default: throw new NotImplementedException();
+                    }
                 }
             }
 
@@ -393,147 +414,79 @@ namespace AI
         {
             public static class Linear
             {
-                public static double Default(double value)
+                public static Vector<double> Default(Vector<double> value)
                 {
                     return value;
                 }
 
-                public static Vector<double> Default(Vector<double> value)
+                public static Matrix<double> Derivative(Vector<double> value)
                 {
-                    Vector<double> result = _v.Dense(value.Count);
-
-                    for (int i = 0; i < result.Count; i++)
-                    {
-                        result[i] = Default(value[i]);
-                    }
-                    return result;
-                }
-
-                public static double Derivative(double value)
-                {
-                    return 1.0;
-                }
-
-                public static Vector<double> Derivative(Vector<double> value)
-                {
-                    Vector<double> result = _v.Dense(value.Count);
-
-                    for (int i = 0; i < result.Count; i++)
-                    {
-                        result[i] = Derivative(value[i]);
-                    }
-                    return result;
+                    return _m.DenseDiagonal(value.Count, value.Count, 1.0);
                 }
             }
 
             public static class Sigmoid
             {
-                public static double Default(double value)
-                {
-                    return 1.0 / (1.0 + Math.Exp(-value));
-                }
-
                 public static Vector<double> Default(Vector<double> value)
                 {
-                    Vector<double> result = _v.Dense(value.Count);
-
-                    for (int i = 0; i < result.Count; i++)
-                    {
-                        result[i] = Default(value[i]);
-                    }
-                    return result;
+                    return 1.0 / (1.0 + value.PointwiseExp());
                 }
 
-                public static double Derivative(double value)
+                public static Matrix<double> Derivative(Vector<double> value)
                 {
-                    return value * (1.0 - value);
-                }
+                    Matrix<double> result = _m.DenseDiagonal(value.Count, value.Count);
 
-                public static Vector<double> Derivative(Vector<double> value)
-                {
-                    Vector<double> result = _v.Dense(value.Count);
-
-                    for (int i = 0; i < result.Count; i++)
+                    for (int i = 0; i < value.Count; i++)
                     {
-                        result[i] = Derivative(value[i]);
+                        result[i, i] = value * (1.0 - value);
                     }
+
                     return result;
                 }
             }
 
             public static class TanH
             {
-                public static double Default(double value)
-                {
-                    return Math.Tanh(value);
-                }
-
                 public static Vector<double> Default(Vector<double> value)
                 {
-                    Vector<double> result = _v.Dense(value.Count);
-
-                    for (int i = 0; i < result.Count; i++)
-                    {
-                        result[i] = Default(value[i]);
-                    }
-                    return result;
+                    return value.PointwiseTanh();
                 }
 
-                public static double Derivative(double value)
+                public static Matrix<double> Derivative(Vector<double> value)
                 {
-                    return 1.0 - Math.Pow(Math.Tanh(value), 2);
-                }
+                    Matrix<double> result = _m.DenseDiagonal(value.Count, value.Count);
 
-                public static Vector<double> Derivative(Vector<double> value)
-                {
-                    Vector<double> result = _v.Dense(value.Count);
-
-                    for (int i = 0; i < result.Count; i++)
+                    for (int i = 0; i < value.Count; i++)
                     {
-                        result[i] = Derivative(value[i]);
+                        result[i, i] = 1.0 - Math.Pow(Math.Tanh(value[i]), 2);
                     }
+
                     return result;
                 }
             }
 
             public static class ReLU
             {
-                public static double Default(double value)
-                {
-                    return Math.Max(0, value);
-                }
-
                 public static Vector<double> Default(Vector<double> value)
                 {
                     Vector<double> result = _v.Dense(value.Count);
 
-                    foreach (double v in value)
+                    for (int i = 0; i < value.Count; i++)
                     {
-                        result.Add(Default(v));
+                        result[i] = Math.Max(value[i], 0.0);
                     }
                     return result;
                 }
 
-                public static double Derivative(double value)
+                public static Matrix<double> Derivative(Vector<double> value)
                 {
-                    if (value >= 0.0)
-                    {
-                        return 1.0;
-                    }
-                    else
-                    {
-                        return 0.0;
-                    }
-                }
+                    Matrix<double> result = _m.Dense(value.Count, value.Count);
 
-                public static Vector<double> Derivative(Vector<double> value)
-                {
-                    Vector<double> result = _v.Dense(value.Count);
-
-                    foreach (double v in value)
+                    for (int i = 0; i < value.Count; i++)
                     {
-                        result.Add(Derivative(v));
+                        result[i, i] = value[i] >= 0.0 ? 1.0 : 0.0;
                     }
+
                     return result;
                 }
             }
@@ -542,16 +495,29 @@ namespace AI
             {
                 public static Vector<double> Default(Vector<double> value)
                 {
-                    Vector<double> shiftValue = value - value.Max();
+                    Vector<double> shiftValue = value - value.Maximum();
                     Vector<double> exps = shiftValue.PointwiseExp();
                     return exps / exps.Sum();
                 }
 
-                //public static Matrix<double> Derivative(Vector<double> value)
-                //{
-                //    Softmax derivate is a matrix:
-                //    [i,j] : how much the ith element in the output vector changes if we change the jth element
-                //}
+                public static Matrix<double> Derivative(Vector<double> value)
+                {
+                    //softmax derivate is a matrix:
+                    //[i,j] : how much the ith element in the output vector changes if we change the jth element
+                    Matrix<double> result = _m.Dense(value.Count, value.Count);
+
+                    Vector<double> softmax = Default(value);
+
+                    for (int i = 0; i < value.Count; i++)
+                    {
+                        for (int j = 0; j < value.Count; j++)
+                        {
+                            result[i, j] = softmax[i] * ((i == j).ToInt() - softmax[j]);
+                        }
+                    }
+
+                    return result;
+                }
             }
         }
 
@@ -560,7 +526,8 @@ namespace AI
             LINEAR,
             SIGMOID,
             TANH,
-            RELU
+            RELU,
+            SOFTMAX
         }
     }
 }

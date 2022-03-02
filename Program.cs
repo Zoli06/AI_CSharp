@@ -135,10 +135,10 @@ namespace AI
             //Console.WriteLine("Finished");
             //nn.Export("c:/asd/export.nns");
 
-            for (int i = 0; i < 8; i += 1)
+            for (int i = 0; i < 1; i += 1)
             {
                 Thread thr1 = new Thread(() => Run(i));
-                Thread thr2 = new Thread(() => Run(i+1));
+                //Thread thr2 = new Thread(() => Run(i+1));
                 thr1.Start();
                 //thr2.Start();
 
@@ -175,11 +175,11 @@ namespace AI
 
             //Console.WriteLine("Formatted training set");
 
-            NeuralNetwork nn = new(new List<int> { 784, 128, 10, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.TANH, NeuralNetwork.Layer.ActivationType.TANH, NeuralNetwork.Layer.ActivationType.SIGMOID });
+            NeuralNetwork nn = new(new List<int> { 784, 128, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.TANH, NeuralNetwork.Layer.ActivationType.SOFTMAX }, NeuralNetwork.LossType.CROSSENTROPY);
 
             //Console.WriteLine(nn.Update(mnistFormattedTrainingSet[100, 0]));
 
-            nn.BackPropagateOnline(mnistFormattedTrainingSet, 3, 2000, 0, 160);
+            nn.BackPropagateOnline(mnistFormattedTrainingSet, .05, 2000, 0, 300);
 
             //Console.WriteLine(nn.Update(mnistFormattedTrainingSet[100, 0]));
 
@@ -211,7 +211,7 @@ namespace AI
 
             Console.WriteLine(num + ": " + counter + "/" + success);
             //Console.WriteLine("Finished");
-            nn.Export("c:/asd/export" + num + ".nns");
+            //nn.Export("h:/export/export2" + num + ".nns");
         }
     }
 }

@@ -10,6 +10,7 @@ namespace AI
     public partial class NeuralNetwork
     {
         public List<Layer> Layers { get; set; }
+        public LossType NeuralNetworkLossType { get; set; }
         public static MatrixBuilder<double> _m = Matrix<double>.Build;
         public static VectorBuilder<double> _v = Vector<double>.Build;
 
@@ -31,7 +32,7 @@ namespace AI
             Layers = layers;
         }
 
-        public NeuralNetwork(List<int> structure, Layer.ActivationType activationType)
+        public NeuralNetwork(List<int> structure, Layer.ActivationType activationType, LossType neuralNetworkLossType)
         {
             List<Layer.ActivationType> _activationTypes = new List<Layer.ActivationType> { Layer.ActivationType.LINEAR };
 
@@ -40,12 +41,12 @@ namespace AI
                 _activationTypes.Add(activationType);
             }
 
-            Build(structure, _activationTypes);
+            Build(structure, _activationTypes, neuralNetworkLossType);
         }
 
-        public NeuralNetwork(List<int> structure, List<Layer.ActivationType> activationTypes)
+        public NeuralNetwork(List<int> structure, List<Layer.ActivationType> activationTypes, LossType neuralNetworkLossType)
         {
-            Build(structure, activationTypes);
+            Build(structure, activationTypes, neuralNetworkLossType);
         }
 
         public NeuralNetwork(string path)
@@ -65,10 +66,11 @@ namespace AI
                 activationTypes.Add(a.layers[i].activationType.ToObject<Layer.ActivationType>());
             }
 
-            Build(weights, biases, activationTypes);
+            // TODO: make it changeable
+            Build(weights, biases, activationTypes, LossType.SQUAREERROR);
         }
 
-        private void Build(List<int> structure, List<Layer.ActivationType> activationTypes)
+        private void Build(List<int> structure, List<Layer.ActivationType> activationTypes, LossType neuralNetworkLossType)
         {
             Layers = new List<Layer>();
 
@@ -78,9 +80,11 @@ namespace AI
             {
                 Layers.Add(new Layer(structure[i], structure[i - 1], activationTypes[i]));
             }
+
+            NeuralNetworkLossType = neuralNetworkLossType;
         }
 
-        private void Build(List<double[,]> weights, List<double[]> biases, List<Layer.ActivationType> activationTypes)
+        private void Build(List<double[,]> weights, List<double[]> biases, List<Layer.ActivationType> activationTypes, LossType neuralNetworkLossType)
         {
             Layers = new List<Layer>();
 
@@ -90,6 +94,8 @@ namespace AI
             {
                 Layers.Add(new Layer(weights[i], biases[i], activationTypes[i]));
             }
+
+            NeuralNetworkLossType = neuralNetworkLossType;
         }
 
         public Vector<double> Update(Vector<double> inputs)
@@ -181,8 +187,8 @@ namespace AI
             {
                 Vector<double> outputs = Update(patterns[patternNum, 0]);
 
-                Vector<double> errors = Loss.Default(outputs, patterns[patternNum, 1], LossType.SQUAREERROR);
-                Vector<double> dErrors = Loss.Derivative(outputs, patterns[patternNum, 1], LossType.SQUAREERROR);
+                Vector<double> errors = Loss.Default(outputs, patterns[patternNum, 1], LossType.CROSSENTROPY);
+                Vector<double> dErrors = Loss.Derivative(outputs, patterns[patternNum, 1], LossType.CROSSENTROPY);
 
                 errorSum += errors.Sum();
 
@@ -263,6 +269,7 @@ namespace AI
                 switch (lossType)
                 {
                     case LossType.SQUAREERROR: return LossFunction.SquareError.Default(outputs, patterns);
+                    case LossType.CROSSENTROPY: return LossFunction.CrossEntropy.Default(outputs, patterns);
                     default: throw new NotImplementedException();
                 }
             }
@@ -272,6 +279,7 @@ namespace AI
                 switch (lossType)
                 {
                     case LossType.SQUAREERROR: return LossFunction.SquareError.Derivative(outputs, patterns);
+                    case LossType.CROSSENTROPY: return LossFunction.CrossEntropy.Derivative(outputs, patterns);
                     default: throw new NotImplementedException();
                 }
             }
@@ -291,11 +299,39 @@ namespace AI
                     return outputs - patterns;
                 }
             }
+
+            public static class CrossEntropy
+            {
+                public static Vector<double> Default(Vector<double> outputs, Vector<double> patterns)
+                {
+                    Vector<double> result = _v.Dense(outputs.Count);
+
+                    for (int i = 0; i < outputs.Count; i++)
+                    {
+                        result[i] = patterns[i] * Math.Exp(outputs[i]);
+                    }
+
+                    return -result;
+                }
+
+                public static Vector<double> Derivative(Vector<double> outputs, Vector<double> patterns)
+                {
+                    Vector<double> result = _v.Dense(outputs.Count);
+
+                    for (int i = 0; i < outputs.Count; i++)
+                    {
+                        result[i] = patterns[i] / Math.Exp(outputs[i]);
+                    }
+
+                    return -result;
+                }
+            }
         }
 
         public enum LossType
         {
-            SQUAREERROR
+            SQUAREERROR,
+            CROSSENTROPY
         }
     }
 }

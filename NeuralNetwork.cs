@@ -111,7 +111,7 @@ namespace AI
             return Outputs;
         }
 
-        public void BackPropagateOnline(Vector<double>[,] patterns, double learningRate, int patternPerEpoch, double targetError, ulong maxEpoches = ulong.MaxValue)
+        public void BackPropagateOnline(Vector<double>[,] patterns, double learningRate, int patternPerEpoch, double targetError, int maxEpoches = int.MaxValue)
         {
             if (patterns.GetLength(0) % patternPerEpoch != 0)
             {
@@ -122,18 +122,26 @@ namespace AI
             int trainedForPatternsNum = 0;
             double totalError = 0;
 
-            ulong epoch;
+            int epoch;
             for (epoch = 0; epoch < maxEpoches; epoch++)
             {
-                totalError += BackPropagateForPatterns(patterns, learningRate, trainedForPatternsNum, trainedForPatternsNum + patternPerEpoch);
+                double error = BackPropagateForPatterns(patterns, learningRate, trainedForPatternsNum, trainedForPatternsNum + patternPerEpoch);
+                totalError += error;
 
                 trainedForPatternsNum += patternPerEpoch;
                 if (patterns.GetLength(0) == trainedForPatternsNum)
                 {
                     trainedForPatternsNum = 0;
                     if (totalError <= targetError) break;
+                    Console.WriteLine();
+                    Console.WriteLine(patterns.GetLength(0) / patternPerEpoch * epoch);
+                    Console.WriteLine(totalError);
+                    Console.WriteLine();
                     totalError = 0;
-                    //Console.WriteLine(epoch);
+                    
+                } else
+                {
+                    Console.WriteLine($"epoch: {epoch}, error: {error}");
                 }
             }
 
@@ -187,8 +195,8 @@ namespace AI
             {
                 Vector<double> outputs = Update(patterns[patternNum, 0]);
 
-                Vector<double> errors = Loss.Default(outputs, patterns[patternNum, 1], LossType.CROSSENTROPY);
-                Vector<double> dErrors = Loss.Derivative(outputs, patterns[patternNum, 1], LossType.CROSSENTROPY);
+                Vector<double> errors = Loss.Default(outputs, patterns[patternNum, 1], NeuralNetworkLossType);
+                Vector<double> dErrors = Loss.Derivative(outputs, patterns[patternNum, 1], NeuralNetworkLossType);
 
                 errorSum += errors.Sum();
 
@@ -308,7 +316,7 @@ namespace AI
 
                     for (int i = 0; i < outputs.Count; i++)
                     {
-                        result[i] = patterns[i] * Math.Exp(outputs[i]);
+                        result[i] = patterns[i] * Math.Log(outputs[i]);
                     }
 
                     return -result;
@@ -320,7 +328,7 @@ namespace AI
 
                     for (int i = 0; i < outputs.Count; i++)
                     {
-                        result[i] = patterns[i] / Math.Exp(outputs[i]);
+                        result[i] = patterns[i] / outputs[i];
                     }
 
                     return -result;

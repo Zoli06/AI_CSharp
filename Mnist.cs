@@ -12,7 +12,7 @@ namespace AI
 
     public static class MnistReader
     {
-        private const string baseDir = "H:/mnist/";
+        private const string baseDir = "c:/mnist/";
         private const string TrainImages = baseDir + "emnist-digits-train-images-idx3-ubyte";
         private const string TrainLabels = baseDir + "emnist-digits-train-labels-idx1-ubyte";
         private const string TestImages = baseDir + "emnist-digits-test-images-idx3-ubyte";

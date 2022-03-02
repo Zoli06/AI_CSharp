@@ -135,18 +135,20 @@ namespace AI
             //Console.WriteLine("Finished");
             //nn.Export("c:/asd/export.nns");
 
-            for (int i = 0; i < 1; i += 1)
-            {
-                Thread thr1 = new Thread(() => Run(i));
-                //Thread thr2 = new Thread(() => Run(i+1));
-                thr1.Start();
-                //thr2.Start();
+            //for (int i = 0; i < 1; i += 1)
+            //{
+            //    Thread thr1 = new Thread(() => Run(i));
+            //    //Thread thr2 = new Thread(() => Run(i+1));
+            //    thr1.Start();
+            //    //thr2.Start();
 
-                thr1.Join();
-                //thr2.Join();
+            //    thr1.Join();
+            //    //thr2.Join();
 
-                Console.WriteLine(i + " finished");
-            }
+            //    Console.WriteLine(i + " finished");
+            //}
+
+            Run(0);
         }
 
         static public void Run(int num)
@@ -179,7 +181,7 @@ namespace AI
 
             //Console.WriteLine(nn.Update(mnistFormattedTrainingSet[100, 0]));
 
-            nn.BackPropagateOnline(mnistFormattedTrainingSet, .05, 2000, 0, 300);
+            nn.BackPropagateOnline(mnistFormattedTrainingSet, .05, 2000, 0, 160);
 
             //Console.WriteLine(nn.Update(mnistFormattedTrainingSet[100, 0]));
 
@@ -211,7 +213,7 @@ namespace AI
 
             Console.WriteLine(num + ": " + counter + "/" + success);
             //Console.WriteLine("Finished");
-            //nn.Export("h:/export/export2" + num + ".nns");
+            nn.Export("c:/asd/export" + num + ".nns");
         }
     }
 }

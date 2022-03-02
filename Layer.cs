@@ -202,9 +202,12 @@ namespace AI
                 {
                     public static Vector<double> Default(Vector<double> value)
                     {
-                        Vector<double> shiftValue = value - value.Maximum();
-                        Vector<double> exps = shiftValue.PointwiseExp();
-                        return exps / exps.Sum();
+                        //Stable
+
+                        Vector<double> numerator = (value - value.Maximum()).PointwiseExp();
+                        double denominator = numerator.Sum();
+                        return numerator / denominator;
+
                     }
 
                     public static Matrix<double> Derivative(Vector<double> value)

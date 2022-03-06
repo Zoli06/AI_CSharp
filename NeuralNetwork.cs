@@ -2,8 +2,8 @@ using MathNet.Numerics.LinearAlgebra;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace AI
 {
@@ -105,43 +105,44 @@ namespace AI
             // Skip input layer
             for (int i = 1; i < Layers.Count; i++)
             {
+
                 Layers[i].Update(Layers[i - 1].Outputs);
             }
 
             return Outputs;
         }
 
-        public void BackPropagateOnline(Vector<double>[,] patterns, double learningRate, int patternPerEpoch, double targetError, int maxEpoches = int.MaxValue)
+        public void BackPropagateOnline(Vector<double>[][] patterns, double learningRate, int patternPerEpoch, double targetAverageError, int maxCompleteEpoches = int.MaxValue)
         {
             if (patterns.GetLength(0) % patternPerEpoch != 0)
             {
                 throw new Exception("Patterns number must be dividable by patternPerEpoch");
             }
 
-
+            Random rnd = new Random();
             int trainedForPatternsNum = 0;
             double totalError = 0;
 
-            int epoch;
-            for (epoch = 0; epoch < maxEpoches; epoch++)
+            for (int smallEpoch = 0; smallEpoch < patterns.GetLength(0) / patternPerEpoch * maxCompleteEpoches; smallEpoch++)
             {
                 double error = BackPropagateForPatterns(patterns, learningRate, trainedForPatternsNum, trainedForPatternsNum + patternPerEpoch);
                 totalError += error;
 
                 trainedForPatternsNum += patternPerEpoch;
+                if (error / patternPerEpoch <= targetAverageError) break;
                 if (patterns.GetLength(0) == trainedForPatternsNum)
                 {
                     trainedForPatternsNum = 0;
-                    if (totalError <= targetError) break;
+                    if (totalError <= targetAverageError) break;
                     Console.WriteLine();
-                    Console.WriteLine(patterns.GetLength(0) / patternPerEpoch * epoch);
-                    Console.WriteLine(totalError);
+                    Console.WriteLine($"completeEpoch: {smallEpoch / (patterns.GetLength(0) / patternPerEpoch)}, averageError: {totalError / patterns.GetLength(0)}");
                     Console.WriteLine();
                     totalError = 0;
-                    
-                } else
+                    rnd.Shuffle(patterns);
+                }
+                else
                 {
-                    Console.WriteLine($"epoch: {epoch}, error: {error}");
+                    Console.WriteLine($"smallEpoch: {smallEpoch}, averageError: {error / patternPerEpoch}");
                 }
             }
 
@@ -149,7 +150,7 @@ namespace AI
             //Console.WriteLine(totalError);
         }
 
-        public void BackPropagateOffline(Vector<double>[,] patterns, double learningRate, double targetError, ulong maxEpoches = ulong.MaxValue)
+        public void BackPropagateOffline(Vector<double>[][] patterns, double learningRate, double targetError, ulong maxEpoches = ulong.MaxValue)
         {
             double totalError = 0;
 
@@ -168,7 +169,7 @@ namespace AI
             //Console.WriteLine(totalError);
         }
 
-        private double BackPropagateForPatterns(Vector<double>[,] patterns, double learningRate, int fromPattern = 0, int? toPattern = null)
+        private double BackPropagateForPatterns(Vector<double>[][] patterns, double learningRate, int fromPattern = 0, int? toPattern = null)
         {
             toPattern ??= patterns.GetLength(0);
 
@@ -193,10 +194,10 @@ namespace AI
             int patternNum2 = 0;
             for (int patternNum = fromPattern; patternNum < toPattern; patternNum++, patternNum2++)
             {
-                Vector<double> outputs = Update(patterns[patternNum, 0]);
+                Vector<double> outputs = Update(patterns[patternNum][0]);
 
-                Vector<double> errors = Loss.Default(outputs, patterns[patternNum, 1], NeuralNetworkLossType);
-                Vector<double> dErrors = Loss.Derivative(outputs, patterns[patternNum, 1], NeuralNetworkLossType);
+                Vector<double> errors = Loss.Default(outputs, patterns[patternNum][1], NeuralNetworkLossType);
+                Vector<double> dErrors = Loss.Derivative(outputs, patterns[patternNum][1], NeuralNetworkLossType);
 
                 errorSum += errors.Sum();
 
@@ -316,6 +317,8 @@ namespace AI
 
                     for (int i = 0; i < outputs.Count; i++)
                     {
+                        outputs[i] = Math.Max(outputs[i], 0.000000001);
+
                         result[i] = patterns[i] * Math.Log(outputs[i]);
                     }
 
@@ -328,6 +331,8 @@ namespace AI
 
                     for (int i = 0; i < outputs.Count; i++)
                     {
+                        outputs[i] = Math.Max(outputs[i], 0.000000001);
+
                         result[i] = patterns[i] / outputs[i];
                     }
 

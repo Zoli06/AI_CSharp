@@ -60,7 +60,7 @@ namespace AI
             {
                 Outputs = _v.Dense(NeuronsNumber);
 
-                DNodes.Add(_m.Diagonal(NeuronsNumber, NeuronsNumber));
+                DNodes.Add(_m.Dense(NeuronsNumber, NeuronsNumber));
 
                 Outputs = Activate.Default(Weights * inputs + Biases, LayerActivationType);
 
@@ -203,11 +203,12 @@ namespace AI
                     public static Vector<double> Default(Vector<double> value)
                     {
                         //Stable
-
                         Vector<double> numerator = (value - value.Maximum()).PointwiseExp();
                         double denominator = numerator.Sum();
-                        return numerator / denominator;
 
+                        Vector<double> result = numerator / denominator;
+
+                        return result;
                     }
 
                     public static Matrix<double> Derivative(Vector<double> value)

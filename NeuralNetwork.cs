@@ -112,37 +112,48 @@ namespace AI
             return Outputs;
         }
 
-        public void BackPropagateOnline(Vector<double>[][] patterns, double learningRate, int patternPerEpoch, double targetAverageError, int maxCompleteEpoches = int.MaxValue)
+        public void BackPropagateOnline(Vector<double>[][] patterns, double learningRate, int batchSize, double targetAccuray, int epoches)
         {
-            if (patterns.GetLength(0) % patternPerEpoch != 0)
+            if (patterns.GetLength(0) % batchSize != 0)
             {
                 throw new Exception("Patterns number must be dividable by patternPerEpoch");
             }
 
             Random rnd = new Random();
+
             int trainedForPatternsNum = 0;
-            double totalError = 0;
+            double totalAccuray = 0;
 
-            for (int smallEpoch = 0; smallEpoch < patterns.GetLength(0) / patternPerEpoch * maxCompleteEpoches; smallEpoch++)
+            int batchesInEpochNum = patterns.GetLength(0) / batchSize;
+            double accuray;
+
+            rnd.Shuffle(patterns);
+
+            for (int smallEpoch = 0; smallEpoch < batchesInEpochNum * epoches; smallEpoch++)
             {
-                double error = BackPropagateForPatterns(patterns, learningRate, trainedForPatternsNum, trainedForPatternsNum + patternPerEpoch);
-                totalError += error;
+                accuray = BackPropagateForPatterns(patterns, learningRate, trainedForPatternsNum, trainedForPatternsNum + batchSize);
+                totalAccuray += accuray;
 
-                trainedForPatternsNum += patternPerEpoch;
-                if (error / patternPerEpoch <= targetAverageError) break;
+                trainedForPatternsNum += batchSize;
+                if (accuray >= targetAccuray) break;
                 if (patterns.GetLength(0) == trainedForPatternsNum)
                 {
+                    if (totalAccuray / batchesInEpochNum <= targetAccuray) break;
+
+                    Console.WriteLine();
+                    Console.WriteLine($"completeEpoch: {smallEpoch / batchesInEpochNum}, accuray: {totalAccuray / batchesInEpochNum}");
+                    Console.WriteLine();
+
+                    totalAccuray = 0;
                     trainedForPatternsNum = 0;
-                    if (totalError <= targetAverageError) break;
-                    Console.WriteLine();
-                    Console.WriteLine($"completeEpoch: {smallEpoch / (patterns.GetLength(0) / patternPerEpoch)}, averageError: {totalError / patterns.GetLength(0)}");
-                    Console.WriteLine();
-                    totalError = 0;
+
                     rnd.Shuffle(patterns);
+
+                    Export($"c:/asd2/export{smallEpoch / batchesInEpochNum}.nns");
                 }
                 else
                 {
-                    Console.WriteLine($"smallEpoch: {smallEpoch}, averageError: {error / patternPerEpoch}");
+                    Console.WriteLine($"smallEpoch: {smallEpoch}, accuray: {accuray}");
                 }
             }
 
@@ -150,18 +161,18 @@ namespace AI
             //Console.WriteLine(totalError);
         }
 
-        public void BackPropagateOffline(Vector<double>[][] patterns, double learningRate, double targetError, ulong maxEpoches = ulong.MaxValue)
+        public void BackPropagateOffline(Vector<double>[][] patterns, double learningRate, double targetAccuray, int epoches)
         {
-            double totalError = 0;
+            double accuray = 0;
 
-            ulong epoch;
-            for (epoch = 0; epoch < maxEpoches; epoch++)
+            int epoch;
+            for (epoch = 0; epoch < epoches; epoch++)
             {
-                totalError = BackPropagateForPatterns(patterns, learningRate);
+                accuray = BackPropagateForPatterns(patterns, learningRate);
 
                 Console.WriteLine(epoch);
 
-                if (totalError <= targetError) break;
+                if (accuray >= targetAccuray) break;
             }
 
             //Console.WriteLine();
@@ -191,10 +202,17 @@ namespace AI
             //Console.WriteLine(toPattern);
             //Console.WriteLine();
 
+            double correctNum = 0;
+
             int patternNum2 = 0;
             for (int patternNum = fromPattern; patternNum < toPattern; patternNum++, patternNum2++)
             {
                 Vector<double> outputs = Update(patterns[patternNum][0]);
+
+                if (outputs.MaximumIndex() == patterns[patternNum][1].MaximumIndex())
+                {
+                    correctNum++;
+                }
 
                 Vector<double> errors = Loss.Default(outputs, patterns[patternNum][1], NeuralNetworkLossType);
                 Vector<double> dErrors = Loss.Derivative(outputs, patterns[patternNum][1], NeuralNetworkLossType);
@@ -232,7 +250,8 @@ namespace AI
                 }
             }
 
-            return errorSum;
+            //return errorSum;
+            return (double)(correctNum / (toPattern - fromPattern));
 
             //if (epoch % 100 == 0)
             //{

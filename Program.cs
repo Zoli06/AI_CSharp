@@ -99,11 +99,11 @@ namespace AI
 
             //Console.WriteLine("Formatted training set");
 
-            NeuralNetwork nn = new(new List<int> { 784, 128, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.TANH, NeuralNetwork.Layer.ActivationType.SOFTMAX }, NeuralNetwork.LossType.CROSSENTROPY);
+            NeuralNetwork nn = new(new List<int> { 784, 256, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.TANH, NeuralNetwork.Layer.ActivationType.SOFTMAX }, NeuralNetwork.LossType.CROSSENTROPY);
 
             //Console.WriteLine(nn.Update(mnistFormattedTrainingSet[100, 0]));
 
-            nn.BackPropagateOnline(mnistFormattedTrainingSet, 0.01, 5000, 0, 5);
+            nn.BackPropagateOnline(mnistFormattedTrainingSet, .01, 100, .95, 5);
 
             //Console.WriteLine(nn.Update(mnistFormattedTrainingSet[100, 0]));
 

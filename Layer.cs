@@ -191,7 +191,7 @@ namespace AI
 
                         for (int i = 0; i < value.Count; i++)
                         {
-                            result[i, i] = value[i] >= 0.0 ? 1.0 : 0.0;
+                            result[i, i] = value[i] > 0.0 ? 1.0 : 0.0;
                         }
 
                         return result;

@@ -1,6 +1,5 @@
-﻿using MathNet.Numerics.LinearAlgebra;
-using System;
-using System.Collections.Generic;
+﻿using MathNet.Numerics.Distributions;
+using MathNet.Numerics.LinearAlgebra;
 
 namespace AI
 {
@@ -34,8 +33,11 @@ namespace AI
 
             public Layer(int neuronsNumber, int lastLayerNeuronsNumber, ActivationType activationType)
             {
-                Weights = NeuralNetwork._m.Random(neuronsNumber, lastLayerNeuronsNumber);
-                Biases = _v.Dense(neuronsNumber);
+                Random rnd = new Random();
+                Normal weightsDistribution = new Normal(0, 1) { RandomSource = rnd };
+                Weights = _m.Random(neuronsNumber, lastLayerNeuronsNumber, weightsDistribution);
+                Normal biasesDistribution = new Normal(0, 0) { RandomSource = rnd };
+                Biases = _v.Random(neuronsNumber, biasesDistribution);
                 Outputs = _v.Dense(neuronsNumber);
                 DNodes = new();
                 DWeights = new();
@@ -136,7 +138,7 @@ namespace AI
                 {
                     public static Vector<double> Default(Vector<double> value)
                     {
-                        return 1.0 / (1.0 + value.PointwiseExp());
+                        return 1.0 / (1.0 + (-value).PointwiseExp());
                     }
 
                     public static Matrix<double> Derivative(Vector<double> value)

@@ -336,9 +336,7 @@ namespace AI
 
                     for (int i = 0; i < outputs.Count; i++)
                     {
-                        outputs[i] = Math.Max(outputs[i], 0.000000001);
-
-                        result[i] = patterns[i] * Math.Log(outputs[i]);
+                        result[i] = patterns[i] * Math.Log(Math.Max(outputs[i], 0.000000001));
                     }
 
                     return -result;
@@ -350,9 +348,7 @@ namespace AI
 
                     for (int i = 0; i < outputs.Count; i++)
                     {
-                        outputs[i] = Math.Max(outputs[i], 0.000000001);
-
-                        result[i] = patterns[i] / outputs[i];
+                        result[i] = patterns[i] / Math.Max(outputs[i], 0.000000001);
                     }
 
                     return -result;

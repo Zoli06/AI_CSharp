@@ -68,7 +68,35 @@ namespace AI
             //    Console.WriteLine(i + " finished");
             //}
 
-            Run(1);
+            Run(2);
+
+            //Vector<double>[][] patterns =
+            //{
+            //    new Vector<double>[] { _v.DenseOfArray(new double[] { 0, 1 }), _v.DenseOfArray(new double[] { 1, 0, 0, 1 }) },
+            //    new Vector<double>[] { _v.DenseOfArray(new double[] { 1, 0 }), _v.DenseOfArray(new double[] { 1, 0, 0, 1 }) },
+            //    new Vector<double>[] { _v.DenseOfArray(new double[] { 1, 1 }), _v.DenseOfArray(new double[] { 0, 1, 1, 1 }) },
+            //    new Vector<double>[] { _v.DenseOfArray(new double[] { 0, 0 }), _v.DenseOfArray(new double[] { 0, 1, 0, 0 }) }
+            //};
+
+            //NeuralNetwork nn = new(new List<int> { 2, 3, 4 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.SIGMOID, NeuralNetwork.Layer.ActivationType.SIGMOID }, NeuralNetwork.LossType.SQUAREERROR);
+
+            //nn.BackPropagateOffline(patterns, .25, 1, 500);
+
+            //for (int i = 0; i < patterns.GetLength(0); i++)
+            //{
+            //    nn.Update(patterns[i][0]);
+            //    Console.WriteLine("Input:");
+            //    for (int j = 0; j < patterns[i].GetLength(0); j++)
+            //    {
+            //        Console.WriteLine(patterns[i][0][j]);
+            //    }
+            //    Console.WriteLine("Output:");
+            //    for (int j = 0; j < nn.Outputs.Count; j++)
+            //    {
+            //        Console.WriteLine(nn.Outputs[j]);
+            //    }
+            //    Console.WriteLine();
+            //}
         }
 
         static public void Run(int num)
@@ -99,11 +127,11 @@ namespace AI
 
             //Console.WriteLine("Formatted training set");
 
-            NeuralNetwork nn = new(new List<int> { 784, 256, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.TANH, NeuralNetwork.Layer.ActivationType.SOFTMAX }, NeuralNetwork.LossType.CROSSENTROPY);
+            NeuralNetwork nn = new(new List<int> { 784, 128, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.SIGMOID, NeuralNetwork.Layer.ActivationType.SOFTMAX }, NeuralNetwork.LossType.CROSSENTROPY);
 
             //Console.WriteLine(nn.Update(mnistFormattedTrainingSet[100, 0]));
 
-            nn.BackPropagateOnline(mnistFormattedTrainingSet, .01, 100, .95, 5);
+            nn.BackPropagateOnline(mnistFormattedTrainingSet, .01, 100, 1, 5);
 
             //Console.WriteLine(nn.Update(mnistFormattedTrainingSet[100, 0]));
 

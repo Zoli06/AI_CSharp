@@ -112,39 +112,51 @@ namespace AI
             return Outputs;
         }
 
-        public void BackPropagateOnline(Vector<double>[][] patterns, double learningRate, int batchSize, double targetAccuray, int epoches)
+        public void BackPropagateOnline(Vector<double>[][] patterns, double learningRate, int batchSize, Metrics metrics, double target, int epoches)
         {
-            if (patterns.GetLength(0) % batchSize != 0)
-            {
-                throw new Exception("Patterns number must be dividable by patternPerEpoch");
-            }
-
             Random rnd = new Random();
 
             int trainedForPatternsNum = 0;
-            double totalAccuray = 0;
+            double totalAccuracyOrError = 0;
+            double accuracyOrError;
 
             int batchesInEpochNum = patterns.GetLength(0) / batchSize;
-            double accuray;
 
             rnd.Shuffle(patterns);
 
             for (int smallEpoch = 0; smallEpoch < batchesInEpochNum * epoches; smallEpoch++)
             {
-                accuray = BackPropagateForPatterns(patterns, learningRate, trainedForPatternsNum, trainedForPatternsNum + batchSize);
-                totalAccuray += accuray;
+                accuracyOrError = BackPropagateForPatterns(patterns, learningRate, metrics, trainedForPatternsNum, trainedForPatternsNum + batchSize);
 
                 trainedForPatternsNum += batchSize;
-                if (accuray >= targetAccuray) break;
+
+                if (metrics == Metrics.ACCURACY)
+                {
+                    if (accuracyOrError >= target) break;
+                }
+                else if (metrics == Metrics.ERROR)
+                {
+                    if (accuracyOrError <= target) break;
+                }
+
+                totalAccuracyOrError += accuracyOrError;
+
                 if (patterns.GetLength(0) == trainedForPatternsNum)
                 {
-                    if (totalAccuray / batchesInEpochNum <= targetAccuray) break;
+                    if (metrics == Metrics.ACCURACY)
+                    {
+                        if (totalAccuracyOrError / batchesInEpochNum >= target) break;
+                    }
+                    else if (metrics == Metrics.ERROR)
+                    {
+                        if (totalAccuracyOrError / batchesInEpochNum <= target) break;
+                    }
 
                     Console.WriteLine();
-                    Console.WriteLine($"completeEpoch: {smallEpoch / batchesInEpochNum}, accuray: {totalAccuray / batchesInEpochNum}");
+                    Console.WriteLine($"completeEpoch: {smallEpoch / batchesInEpochNum}, accuracyOrError: {totalAccuracyOrError / batchesInEpochNum}");
                     Console.WriteLine();
 
-                    totalAccuray = 0;
+                    totalAccuracyOrError = 0;
                     trainedForPatternsNum = 0;
 
                     rnd.Shuffle(patterns);
@@ -153,7 +165,7 @@ namespace AI
                 }
                 else
                 {
-                    Console.WriteLine($"smallEpoch: {smallEpoch}, accuray: {accuray}");
+                    Console.WriteLine($"smallEpoch: {smallEpoch}, accuracyOrError: {accuracyOrError}");
                 }
             }
 
@@ -161,18 +173,23 @@ namespace AI
             //Console.WriteLine(totalError);
         }
 
-        public void BackPropagateOffline(Vector<double>[][] patterns, double learningRate, double targetAccuray, int epoches)
+        public void BackPropagateOffline(Vector<double>[][] patterns, double learningRate, Metrics metrics, double target, int epoches)
         {
-            double accuray = 0;
+            double accuracyOrError;
 
             int epoch;
             for (epoch = 0; epoch < epoches; epoch++)
             {
-                accuray = BackPropagateForPatterns(patterns, learningRate);
+                accuracyOrError = BackPropagateForPatterns(patterns, learningRate, metrics);
 
-                Console.WriteLine(epoch);
-
-                if (accuray >= targetAccuray) break;
+                if (metrics == Metrics.ACCURACY)
+                {
+                    if (accuracyOrError >= target) break;
+                }
+                else if (metrics == Metrics.ERROR)
+                {
+                    if (accuracyOrError <= target) break;
+                }
             }
 
             //Console.WriteLine();
@@ -180,7 +197,7 @@ namespace AI
             //Console.WriteLine(totalError);
         }
 
-        private double BackPropagateForPatterns(Vector<double>[][] patterns, double learningRate, int fromPattern = 0, int? toPattern = null)
+        private double BackPropagateForPatterns(Vector<double>[][] patterns, double learningRate, Metrics metrics, int fromPattern = 0, int? toPattern = null)
         {
             toPattern ??= patterns.GetLength(0);
 
@@ -197,11 +214,6 @@ namespace AI
             }
 
             double errorSum = 0;
-
-            //Console.WriteLine(fromPattern);
-            //Console.WriteLine(toPattern);
-            //Console.WriteLine();
-
             double correctNum = 0;
 
             int patternNum2 = 0;
@@ -209,15 +221,23 @@ namespace AI
             {
                 Vector<double> outputs = Update(patterns[patternNum][0]);
 
-                if (outputs.MaximumIndex() == patterns[patternNum][1].MaximumIndex())
+                // Unused
+                // Vector<double> errors = Loss.Default(outputs, patterns[patternNum][1], NeuralNetworkLossType);
+
+                // Doesn't call GetAccuracy due to insane memory usage
+                if (metrics == Metrics.ACCURACY)
                 {
-                    correctNum++;
+                    if (outputs.MaximumIndex() == patterns[patternNum][1].MaximumIndex())
+                    {
+                        correctNum++;
+                    }
+                }
+                else if (metrics == Metrics.ERROR)
+                {
+                    errorSum += Loss.Default(outputs, patterns[patternNum][1], NeuralNetworkLossType).Sum();
                 }
 
-                Vector<double> errors = Loss.Default(outputs, patterns[patternNum][1], NeuralNetworkLossType);
                 Vector<double> dErrors = Loss.Derivative(outputs, patterns[patternNum][1], NeuralNetworkLossType);
-
-                errorSum += errors.Sum();
 
                 for (int i = Layers.Count - 1; i >= 0; i--)
                 {
@@ -250,17 +270,47 @@ namespace AI
                 }
             }
 
-            //return errorSum;
+            if (metrics == Metrics.ACCURACY)
+            {
+                return (double)(correctNum / (toPattern - fromPattern));
+            }
+            else if (metrics == Metrics.ERROR)
+            {
+                return (double)(errorSum / (toPattern - fromPattern));
+            }
+
+            throw new Exception();
+        }
+
+        public double GetAccuracy(Vector<double>[][] patterns, int fromPattern = 0, int? toPattern = null)
+        {
+            // One-hot encoding only
+
+            toPattern ??= patterns.GetLength(0);
+
+            int correctNum = 0;
+            for (int patternNum = fromPattern; patternNum < toPattern; patternNum++)
+            {
+                if (Update(patterns[patternNum][0]).MaximumIndex() == patterns[patternNum][1].MaximumIndex())
+                {
+                    correctNum++;
+                }
+            }
+
             return (double)(correctNum / (toPattern - fromPattern));
+        }
 
-            //if (epoch % 100 == 0)
-            //{
-            //    //Console.WriteLine(Outputs[0]);
-            //    //Console.WriteLine();
-            //}
-            //}
+        public double GetError(Vector<double>[][] patterns, int fromPattern = 0, int? toPattern = null)
+        {
+            toPattern ??= patterns.GetLength(0);
 
-            //Console.WriteLine("Finished");
+            double error = 0;
+            for (int patternNum = fromPattern; patternNum < toPattern; patternNum++)
+            {
+                error += Loss.Default(Update(patterns[patternNum][0]), patterns[patternNum][1], NeuralNetworkLossType).Sum();
+            }
+
+            return (double)(error / (toPattern - fromPattern));
         }
 
         public void Export(string path)
@@ -360,6 +410,12 @@ namespace AI
         {
             SQUAREERROR,
             CROSSENTROPY
+        }
+
+        public enum Metrics
+        {
+            ERROR,
+            ACCURACY
         }
     }
 }

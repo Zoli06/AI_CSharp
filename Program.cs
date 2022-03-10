@@ -1,4 +1,6 @@
 ﻿using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.Providers.OpenBLAS;
+using MathNet.Numerics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -80,7 +82,7 @@ namespace AI
 
             //NeuralNetwork nn = new(new List<int> { 2, 3, 4 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.SIGMOID, NeuralNetwork.Layer.ActivationType.SIGMOID }, NeuralNetwork.LossType.SQUAREERROR);
 
-            //nn.BackPropagateOffline(patterns, .25, 1, 500);
+            //nn.BackPropagateOffline(patterns, .25, NeuralNetwork.Metrics.ERROR, double.NegativeInfinity, 500);
 
             //for (int i = 0; i < patterns.GetLength(0); i++)
             //{
@@ -127,11 +129,11 @@ namespace AI
 
             //Console.WriteLine("Formatted training set");
 
-            NeuralNetwork nn = new(new List<int> { 784, 128, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.SIGMOID, NeuralNetwork.Layer.ActivationType.SOFTMAX }, NeuralNetwork.LossType.CROSSENTROPY);
+            NeuralNetwork nn = new(new List<int> { 784, 128, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.SIGMOID, NeuralNetwork.Layer.ActivationType.SIGMOID }, NeuralNetwork.LossType.SQUAREERROR);
 
             //Console.WriteLine(nn.Update(mnistFormattedTrainingSet[100, 0]));
 
-            nn.BackPropagateOnline(mnistFormattedTrainingSet, .01, 100, 1, 5);
+            nn.BackPropagateOnline(mnistFormattedTrainingSet, .0001, 50, NeuralNetwork.Metrics.ACCURACY, double.PositiveInfinity, 1);
 
             //Console.WriteLine(nn.Update(mnistFormattedTrainingSet[100, 0]));
 

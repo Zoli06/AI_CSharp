@@ -131,6 +131,10 @@ namespace AI
 
             NeuralNetwork nn = new(new List<int> { 784, 128, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.SIGMOID, NeuralNetwork.Layer.ActivationType.SIGMOID }, NeuralNetwork.LossType.SQUAREERROR);
 
+            nn.GetAccuracy(mnistFormattedTrainingSet);
+
+            Console.ReadLine();
+
             //Console.WriteLine(nn.Update(mnistFormattedTrainingSet[100, 0]));
 
             nn.BackPropagateOnline(mnistFormattedTrainingSet, .0001, 50, NeuralNetwork.Metrics.ACCURACY, double.PositiveInfinity, 1);

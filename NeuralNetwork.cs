@@ -205,12 +205,7 @@ namespace AI
                 throw new Exception("ToPattern can\' be bigger than patterns num");
             }
 
-            for (int i = 0; i < Layers.Count; i++)
-            {
-                Layers[i].DNodes.Clear();
-                Layers[i].DWeights.Clear();
-                Layers[i].DeltaNodes.Clear();
-            }
+            Clear();
 
             double errorSum = 0;
             double correctNum = 0;
@@ -285,6 +280,8 @@ namespace AI
         {
             // One-hot encoding only
 
+            Clear();
+
             toPattern ??= patterns.GetLength(0);
 
             int correctNum = 0;
@@ -294,6 +291,8 @@ namespace AI
                 {
                     correctNum++;
                 }
+
+                Clear();
             }
 
             return (double)(correctNum / (toPattern - fromPattern));
@@ -303,13 +302,27 @@ namespace AI
         {
             toPattern ??= patterns.GetLength(0);
 
+            Clear();
+
             double error = 0;
             for (int patternNum = fromPattern; patternNum < toPattern; patternNum++)
             {
                 error += Loss.Default(Update(patterns[patternNum][0]), patterns[patternNum][1], NeuralNetworkLossType).Sum();
+
+                Clear();
             }
 
             return (double)(error / (toPattern - fromPattern));
+        }
+
+        public void Clear()
+        {
+            for (int i = 0; i < Layers.Count; i++)
+            {
+                Layers[i].DNodes.Clear();
+                Layers[i].DWeights.Clear();
+                Layers[i].DeltaNodes.Clear();
+            }
         }
 
         public void Export(string path)

@@ -66,8 +66,7 @@ namespace AI
                 activationTypes.Add(a.layers[i].activationType.ToObject<Layer.ActivationType>());
             }
 
-            // TODO: make it changeable
-            Build(weights, biases, activationTypes, LossType.SQUAREERROR);
+            Build(weights, biases, activationTypes, (LossType)a.neuralNetworkLossType);
         }
 
         private void Build(List<int> structure, List<Layer.ActivationType> activationTypes, LossType neuralNetworkLossType)
@@ -322,7 +321,8 @@ namespace AI
                     isInputLayer = index == 0,
                     weights = item.Weights.ToArray(),
                     biases = item.Biases.ToArray(),
-                    activationType = item.LayerActivationType
+                    activationType = item.LayerActivationType,
+                    neuralNetworkLossType = NeuralNetworkLossType
                 })
             };
 

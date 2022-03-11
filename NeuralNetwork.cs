@@ -1,16 +1,11 @@
 using MathNet.Numerics.LinearAlgebra;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 
 namespace AI
 {
     public partial class NeuralNetwork
     {
         public List<Layer> Layers { get; set; }
-        public LossType NeuralNetworkLossType { get; set; }
         public static MatrixBuilder<double> _m = Matrix<double>.Build;
         public static VectorBuilder<double> _v = Vector<double>.Build;
 
@@ -32,7 +27,7 @@ namespace AI
             Layers = layers;
         }
 
-        public NeuralNetwork(List<int> structure, Layer.ActivationType activationType, LossType neuralNetworkLossType)
+        public NeuralNetwork(List<int> structure, Layer.ActivationType activationType)
         {
             List<Layer.ActivationType> _activationTypes = new List<Layer.ActivationType> { Layer.ActivationType.LINEAR };
 
@@ -41,12 +36,12 @@ namespace AI
                 _activationTypes.Add(activationType);
             }
 
-            Build(structure, _activationTypes, neuralNetworkLossType);
+            Build(structure, _activationTypes);
         }
 
-        public NeuralNetwork(List<int> structure, List<Layer.ActivationType> activationTypes, LossType neuralNetworkLossType)
+        public NeuralNetwork(List<int> structure, List<Layer.ActivationType> activationTypes)
         {
-            Build(structure, activationTypes, neuralNetworkLossType);
+            Build(structure, activationTypes);
         }
 
         public NeuralNetwork(string path)
@@ -66,10 +61,10 @@ namespace AI
                 activationTypes.Add(a.layers[i].activationType.ToObject<Layer.ActivationType>());
             }
 
-            Build(weights, biases, activationTypes, (LossType)a.neuralNetworkLossType);
+            Build(weights, biases, activationTypes);
         }
 
-        private void Build(List<int> structure, List<Layer.ActivationType> activationTypes, LossType neuralNetworkLossType)
+        private void Build(List<int> structure, List<Layer.ActivationType> activationTypes)
         {
             Layers = new List<Layer>();
 
@@ -79,11 +74,9 @@ namespace AI
             {
                 Layers.Add(new Layer(structure[i], structure[i - 1], activationTypes[i]));
             }
-
-            NeuralNetworkLossType = neuralNetworkLossType;
         }
 
-        private void Build(List<double[,]> weights, List<double[]> biases, List<Layer.ActivationType> activationTypes, LossType neuralNetworkLossType)
+        private void Build(List<double[,]> weights, List<double[]> biases, List<Layer.ActivationType> activationTypes)
         {
             Layers = new List<Layer>();
 
@@ -93,8 +86,6 @@ namespace AI
             {
                 Layers.Add(new Layer(weights[i], biases[i], activationTypes[i]));
             }
-
-            NeuralNetworkLossType = neuralNetworkLossType;
         }
 
         public Vector<double> Update(Vector<double> inputs)
@@ -111,7 +102,7 @@ namespace AI
             return Outputs;
         }
 
-        public void BackPropagateOnline(Vector<double>[][] patterns, double learningRate, int batchSize, Metrics metrics, double target, int epoches)
+        public void BackPropagateOnline(Vector<double>[][] patterns, double learningRate, int batchSize, LossType lossType, Metrics metrics, double target, int epoches)
         {
             Random rnd = new Random();
 
@@ -125,7 +116,7 @@ namespace AI
 
             for (int smallEpoch = 0; smallEpoch < batchesInEpochNum * epoches; smallEpoch++)
             {
-                accuracyOrError = BackPropagateForPatterns(patterns, learningRate, metrics, trainedForPatternsNum, trainedForPatternsNum + batchSize);
+                accuracyOrError = BackPropagateForPatterns(patterns, learningRate, lossType, metrics, trainedForPatternsNum, trainedForPatternsNum + batchSize);
 
                 trainedForPatternsNum += batchSize;
 
@@ -172,14 +163,14 @@ namespace AI
             //Console.WriteLine(totalError);
         }
 
-        public void BackPropagateOffline(Vector<double>[][] patterns, double learningRate, Metrics metrics, double target, int epoches)
+        public void BackPropagateOffline(Vector<double>[][] patterns, double learningRate, LossType lossType, Metrics metrics, double target, int epoches)
         {
             double accuracyOrError;
 
             int epoch;
             for (epoch = 0; epoch < epoches; epoch++)
             {
-                accuracyOrError = BackPropagateForPatterns(patterns, learningRate, metrics);
+                accuracyOrError = BackPropagateForPatterns(patterns, learningRate, lossType, metrics);
 
                 if (metrics == Metrics.ACCURACY)
                 {
@@ -196,7 +187,7 @@ namespace AI
             //Console.WriteLine(totalError);
         }
 
-        private double BackPropagateForPatterns(Vector<double>[][] patterns, double learningRate, Metrics metrics, int fromPattern = 0, int? toPattern = null)
+        private double BackPropagateForPatterns(Vector<double>[][] patterns, double learningRate, LossType lossType, Metrics metrics, int fromPattern = 0, int? toPattern = null)
         {
             toPattern ??= patterns.GetLength(0);
 
@@ -228,10 +219,10 @@ namespace AI
                 }
                 else if (metrics == Metrics.ERROR)
                 {
-                    errorSum += Loss.Default(outputs, patterns[patternNum][1], NeuralNetworkLossType).Sum();
+                    errorSum += Loss.Default(outputs, patterns[patternNum][1], lossType).Sum();
                 }
 
-                Vector<double> dErrors = Loss.Derivative(outputs, patterns[patternNum][1], NeuralNetworkLossType);
+                Vector<double> dErrors = Loss.Derivative(outputs, patterns[patternNum][1], lossType);
 
                 for (int i = Layers.Count - 1; i >= 0; i--)
                 {
@@ -298,7 +289,7 @@ namespace AI
             return (double)(correctNum / (toPattern - fromPattern));
         }
 
-        public double GetError(Vector<double>[][] patterns, int fromPattern = 0, int? toPattern = null)
+        public double GetError(Vector<double>[][] patterns, LossType lossType, int fromPattern = 0, int? toPattern = null)
         {
             toPattern ??= patterns.GetLength(0);
 
@@ -307,7 +298,7 @@ namespace AI
             double error = 0;
             for (int patternNum = fromPattern; patternNum < toPattern; patternNum++)
             {
-                error += Loss.Default(Update(patterns[patternNum][0]), patterns[patternNum][1], NeuralNetworkLossType).Sum();
+                error += Loss.Default(Update(patterns[patternNum][0]), patterns[patternNum][1], lossType).Sum();
 
                 Clear();
             }
@@ -334,8 +325,7 @@ namespace AI
                     isInputLayer = index == 0,
                     weights = item.Weights.ToArray(),
                     biases = item.Biases.ToArray(),
-                    activationType = item.LayerActivationType,
-                    neuralNetworkLossType = NeuralNetworkLossType
+                    activationType = item.LayerActivationType
                 })
             };
 

@@ -1,3 +1,4 @@
+using MathNet.Numerics.Distributions;
 using MathNet.Numerics.LinearAlgebra;
 using Newtonsoft.Json;
 
@@ -27,21 +28,53 @@ namespace AI
             Layers = layers;
         }
 
-        public NeuralNetwork(List<int> structure, Layer.ActivationType activationType)
+        public NeuralNetwork(List<int> structure, Layer.ActivationType activationType, Normal? weightsDistribution = null, Normal? biasesDistribution = null)
         {
-            List<Layer.ActivationType> _activationTypes = new List<Layer.ActivationType> { Layer.ActivationType.LINEAR };
+            List<Layer.ActivationType> _activationTypes = new() { Layer.ActivationType.LINEAR };
 
             for (int i = 0; i < structure.Count; i++)
             {
                 _activationTypes.Add(activationType);
             }
 
-            Build(structure, _activationTypes);
+            List<Normal?> _weightsDistribution = new() { null };
+            for (int i = 1; i < structure.Count; i++)
+            {
+                _weightsDistribution.Add(weightsDistribution);
+            }
+
+            List<Normal?> _biasesDistribution = new() { null };
+            for (int i = 1; i < structure.Count; i++)
+            {
+                _biasesDistribution.Add(biasesDistribution);
+            }
+
+            Build(structure, _activationTypes, _weightsDistribution, _biasesDistribution);
         }
 
-        public NeuralNetwork(List<int> structure, List<Layer.ActivationType> activationTypes)
+        public NeuralNetwork(List<int> structure, List<Layer.ActivationType> activationTypes, List<Normal?>? weightsDistribution = null, List<Normal?>? biasesDistribution = null)
         {
-            Build(structure, activationTypes);
+            if (weightsDistribution == null)
+            {
+                weightsDistribution = new();
+
+                for (int i = 0; i < structure.Count; i++)
+                {
+                    weightsDistribution.Add(null);
+                }
+            }
+
+            if (biasesDistribution == null)
+            {
+                biasesDistribution = new();
+
+                for (int i = 0; i < structure.Count; i++)
+                {
+                    biasesDistribution.Add(null);
+                }
+            }
+
+            Build(structure, activationTypes, weightsDistribution, biasesDistribution);
         }
 
         public NeuralNetwork(string path)
@@ -64,7 +97,7 @@ namespace AI
             Build(weights, biases, activationTypes);
         }
 
-        private void Build(List<int> structure, List<Layer.ActivationType> activationTypes)
+        private void Build(List<int> structure, List<Layer.ActivationType> activationTypes, List<Normal?> weightsDistribution, List<Normal?> biasesDistribution)
         {
             Layers = new List<Layer>();
 
@@ -72,7 +105,7 @@ namespace AI
 
             for (int i = 1; i < structure.Count; i++)
             {
-                Layers.Add(new Layer(structure[i], structure[i - 1], activationTypes[i]));
+                Layers.Add(new Layer(structure[i], structure[i - 1], activationTypes[i], weightsDistribution[i], biasesDistribution[i]));
             }
         }
 

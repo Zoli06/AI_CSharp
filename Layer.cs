@@ -31,12 +31,12 @@ namespace AI
                 }
             }
 
-            public Layer(int neuronsNumber, int lastLayerNeuronsNumber, ActivationType activationType)
+            public Layer(int neuronsNumber, int lastLayerNeuronsNumber, ActivationType activationType, Normal? weightsDistribution = null, Normal? biasesDistribution = null)
             {
                 Random rnd = new Random();
-                Normal weightsDistribution = new Normal(0, 1) { RandomSource = rnd };
+                weightsDistribution ??= new Normal(0, 1) { RandomSource = rnd };
+                biasesDistribution ??= new Normal(0, 0) { RandomSource = rnd };
                 Weights = _m.Random(neuronsNumber, lastLayerNeuronsNumber, weightsDistribution);
-                Normal biasesDistribution = new Normal(0, 0) { RandomSource = rnd };
                 Biases = _v.Random(neuronsNumber, biasesDistribution);
                 Outputs = _v.Dense(neuronsNumber);
                 DNodes = new();

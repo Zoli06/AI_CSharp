@@ -1,4 +1,5 @@
 ﻿using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.Distributions;
 using MathNet.Numerics.Providers.OpenBLAS;
 using MathNet.Numerics;
 using System;
@@ -128,6 +129,8 @@ namespace AI
             }
 
             //Console.WriteLine("Formatted training set");
+
+            Random rnd = new ();
 
             NeuralNetwork nn = new(new List<int> { 784, 128, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.SIGMOID, NeuralNetwork.Layer.ActivationType.SIGMOID });
 

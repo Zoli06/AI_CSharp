@@ -1,19 +1,16 @@
 ﻿using MathNet.Numerics.LinearAlgebra;
-using MathNet.Numerics.Distributions;
-using MathNet.Numerics.Providers.OpenBLAS;
-using MathNet.Numerics;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
+using System.Globalization;
+using System.Net;
+using System.Text;
 
 namespace AI
 {
     class Program
     {
+        public static HttpListener listener;
+        public static VectorBuilder<double> _v = Vector<double>.Build;
         static void Main(string[] args)
         {
-            VectorBuilder<double> _v = Vector<double>.Build;
 
             #region
             //List<int> structure = new() { 2, 2, 4 };
@@ -58,6 +55,7 @@ namespace AI
             //}
             #endregion
 
+            #region
             //for (int i = 0; i < 1; i += 1)
             //{
             //    Thread thr1 = new Thread(() => Run(i));
@@ -71,7 +69,7 @@ namespace AI
             //    Console.WriteLine(i + " finished");
             //}
 
-            Run(2);
+            //
 
             //Vector<double>[][] patterns =
             //{
@@ -100,12 +98,77 @@ namespace AI
             //    }
             //    Console.WriteLine();
             //}
+            //
+            #endregion
+
+
+
+            //Run(2);
+
+            HttpServer(new string[2] { "http://localhost:9463/", "http://192.168.0.16:9463/" });
         }
 
-        static public void Run(int num)
+        public static void HttpServer(string[] prefixes)
         {
-            VectorBuilder<double> _v = Vector<double>.Build;
+            NeuralNetwork network = new(@"C:\asd\90.nns");
 
+            if (!HttpListener.IsSupported)
+            {
+                Console.WriteLine("Windows XP SP2 or Server 2003 is required to use the HttpListener class.");
+                return;
+            }
+            // URI prefixes are required,
+            // for example "http://contoso.com:8080/index/".
+            if (prefixes == null || prefixes.Length == 0)
+                throw new ArgumentException("prefixes");
+
+            // Create a listener.
+            listener = new HttpListener();
+            // Add the prefixes.
+            foreach (string s in prefixes)
+            {
+                listener.Prefixes.Add(s);
+            }
+            listener.Start();
+            Console.WriteLine("Listening...");
+            while (true)
+            {
+                // Note: The GetContext method blocks while waiting for a request.
+                HttpListenerContext context = listener.GetContext();
+                HttpListenerRequest request = context.Request;
+
+                Console.WriteLine(request.Url.ToString().Substring(34, request.Url.ToString().Length - 34 - 1).Split(','));
+
+                double[] inputsArr = Array.ConvertAll(request.Url.ToString().Substring(34, request.Url.ToString().Length - 34 - 1).Split(','), element => double.Parse(element, CultureInfo.InvariantCulture));
+
+                for (int i = 0; i < 28; i++)
+                {
+                    for (int j = 0; j < 28; j++)
+                    {
+                        Console.Write(inputsArr[28 * i + j] + " | ");
+                    }
+                    Console.WriteLine();
+                }
+
+                Vector<double> inputs = _v.DenseOfArray(inputsArr);
+
+                // Obtain a response object.
+                HttpListenerResponse response = context.Response;
+                // Construct a response.
+                string responseString = network.Update(inputs).MaximumIndex().ToString();
+                //string responseString = "asd";
+                byte[] buffer = Encoding.UTF8.GetBytes(responseString);
+                // Get a response stream and write the response to it.
+                response.ContentLength64 = buffer.Length;
+                Stream output = response.OutputStream;
+                output.Write(buffer, 0, buffer.Length);
+                // You must close the output stream.
+                output.Close();
+            }
+        }
+
+        public static void Run(int num)
+        {
             IEnumerable<Image> mnistTrainingSet = MnistReader.ReadTrainingData();
 
             //Console.WriteLine("Readed training set");
@@ -130,7 +193,7 @@ namespace AI
 
             //Console.WriteLine("Formatted training set");
 
-            Random rnd = new ();
+            Random rnd = new();
 
             NeuralNetwork nn = new(new List<int> { 784, 128, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.SIGMOID, NeuralNetwork.Layer.ActivationType.SIGMOID });
 
@@ -177,6 +240,11 @@ namespace AI
             Console.WriteLine(num + ": " + counter + "/" + success);
             //Console.WriteLine("Finished");
             nn.Export("c:/asd/export" + num + ".nns");
+        }
+
+        static void OnProcessExit(object sender, EventArgs e)
+        {
+            listener.Stop();
         }
     }
 }

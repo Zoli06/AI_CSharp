@@ -114,8 +114,7 @@ namespace AI
 
             if (!HttpListener.IsSupported)
             {
-                Console.WriteLine("Windows XP SP2 or Server 2003 is required to use the HttpListener class.");
-                return;
+                throw new Exception();
             }
             // URI prefixes are required,
             // for example "http://contoso.com:8080/index/".
@@ -193,7 +192,7 @@ namespace AI
 
             //Console.WriteLine("Formatted training set");
 
-            Random rnd = new();
+            //Random rnd = new();
 
             NeuralNetwork nn = new(new List<uint> { 784, 128, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.LEAKYRELU, NeuralNetwork.Layer.ActivationType.SOFTMAX });
 

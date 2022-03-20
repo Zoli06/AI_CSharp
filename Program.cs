@@ -103,9 +103,9 @@ namespace AI
 
 
 
-            //Run(2);
+            Run(2);
 
-            HttpServer(new string[2] { "http://localhost:9463/", "http://192.168.0.16:9463/" });
+            //HttpServer(new string[2] { "http://localhost:9463/", "http://192.168.0.16:9463/" });
         }
 
         public static void HttpServer(string[] prefixes)
@@ -195,7 +195,12 @@ namespace AI
 
             Random rnd = new();
 
-            NeuralNetwork nn = new(new List<int> { 784, 128, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.SIGMOID, NeuralNetwork.Layer.ActivationType.SIGMOID });
+            NeuralNetwork nn = new(new List<uint> { 784, 128, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.SIGMOID, NeuralNetwork.Layer.ActivationType.SIGMOID });
+
+            Console.WriteLine("Accuracy measurement started");
+            nn.GetAccuracy(mnistFormattedTrainingSet);
+            Console.WriteLine("Accuracy measurement finished");
+
 
             //nn.GetAccuracy(mnistFormattedTrainingSet);
 

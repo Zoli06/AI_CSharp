@@ -6,9 +6,9 @@ namespace AI
 {
     public partial class NeuralNetwork
     {
-        public List<Layer> Layers { get; set; }
-        public static MatrixBuilder<double> _m = Matrix<double>.Build;
-        public static VectorBuilder<double> _v = Vector<double>.Build;
+        private List<Layer> Layers;
+        private static MatrixBuilder<double> _m = Matrix<double>.Build;
+        private static VectorBuilder<double> _v = Vector<double>.Build;
 
         public Vector<double> Outputs
         {
@@ -16,19 +16,14 @@ namespace AI
             {
                 return Layers[Layers.Count - 1].Outputs;
             }
-            set
-            {
-                Layers[Layers.Count - 1].Outputs = value;
-            }
         }
 
-        public NeuralNetwork(List<Layer> layers = null)
+        public NeuralNetwork(List<Layer> layers)
         {
-            layers ??= new List<Layer>();
             Layers = layers;
         }
 
-        public NeuralNetwork(List<int> structure, Layer.ActivationType activationType, Normal? weightsDistribution = null, Normal? biasesDistribution = null)
+        public NeuralNetwork(List<uint> structure, Layer.ActivationType activationType, Normal? weightsDistribution = null, Normal? biasesDistribution = null)
         {
             List<Layer.ActivationType> _activationTypes = new() { Layer.ActivationType.LINEAR };
 
@@ -52,7 +47,7 @@ namespace AI
             Build(structure, _activationTypes, _weightsDistribution, _biasesDistribution);
         }
 
-        public NeuralNetwork(List<int> structure, List<Layer.ActivationType> activationTypes, List<Normal?>? weightsDistribution = null, List<Normal?>? biasesDistribution = null)
+        public NeuralNetwork(List<uint> structure, List<Layer.ActivationType> activationTypes, List<Normal?>? weightsDistribution = null, List<Normal?>? biasesDistribution = null)
         {
             if (weightsDistribution == null)
             {
@@ -97,7 +92,7 @@ namespace AI
             Build(weights, biases, activationTypes);
         }
 
-        private void Build(List<int> structure, List<Layer.ActivationType> activationTypes, List<Normal?> weightsDistribution, List<Normal?> biasesDistribution)
+        private void Build(List<uint> structure, List<Layer.ActivationType> activationTypes, List<Normal?> weightsDistribution, List<Normal?> biasesDistribution)
         {
             Layers = new List<Layer>();
 
@@ -113,10 +108,12 @@ namespace AI
         {
             Layers = new List<Layer>();
 
-            Layers.Add(new Layer(weights[0].GetLength(0), 0, activationTypes[0]));
+            Layers.Add(new Layer((uint)weights[0].GetLength(0), 0, activationTypes[0]));
 
             for (int i = 1; i < weights.Count; i++)
             {
+                if (weights[i].GetLength(0) != biases[i].Length) throw new Exception("Neurons in weights must be equal to neurons in biases");
+
                 Layers.Add(new Layer(weights[i], biases[i], activationTypes[i]));
             }
         }
@@ -128,22 +125,30 @@ namespace AI
             // Skip input layer
             for (int i = 1; i < Layers.Count; i++)
             {
-
                 Layers[i].Update(Layers[i - 1].Outputs);
             }
 
             return Outputs;
         }
 
-        public void BackPropagateOnline(Vector<double>[][] patterns, double learningRate, int batchSize, LossType lossType, Metrics metrics, double target, int epoches)
+        public void BackPropagateOnline(Vector<double>[][] patterns, double learningRate, uint batchSize, LossType lossType, Metrics metrics, double target, uint epoches)
         {
+            if (learningRate <= 0) throw new Exception("LearingRate must be greater than zero");
+
+            if (batchSize == 0) throw new Exception("BatchSize can\'t be zero");
+
+            if (patterns.Length % batchSize != 0) throw new Exception("Patterns number must be dividable by batchSize");
+
+            if (target <= 0) throw new Exception("Target must be greater than zero");
+
             Random rnd = new Random();
 
-            int trainedForPatternsNum = 0;
+            uint trainedForPatternsNum = 0;
             double totalAccuracyOrError = 0;
             double accuracyOrError;
 
-            int batchesInEpochNum = patterns.GetLength(0) / batchSize;
+            // Always dividable
+            int batchesInEpochNum = (int)(patterns.Length / batchSize);
 
             rnd.Shuffle(patterns);
 
@@ -164,7 +169,7 @@ namespace AI
 
                 totalAccuracyOrError += accuracyOrError;
 
-                if (patterns.GetLength(0) == trainedForPatternsNum)
+                if (patterns.Length == trainedForPatternsNum)
                 {
                     if (metrics == Metrics.ACCURACY)
                     {
@@ -196,8 +201,12 @@ namespace AI
             //Console.WriteLine(totalError);
         }
 
-        public void BackPropagateOffline(Vector<double>[][] patterns, double learningRate, LossType lossType, Metrics metrics, double target, int epoches)
+        public void BackPropagateOffline(Vector<double>[][] patterns, double learningRate, LossType lossType, Metrics metrics, double target, uint epoches)
         {
+            if (learningRate <= 0) throw new Exception("LearingRate must be greater than zero");
+
+            if (target <= 0) throw new Exception("Target must be greater than zero");
+
             double accuracyOrError;
 
             int epoch;
@@ -220,14 +229,15 @@ namespace AI
             //Console.WriteLine(totalError);
         }
 
-        private double BackPropagateForPatterns(Vector<double>[][] patterns, double learningRate, LossType lossType, Metrics metrics, int fromPattern = 0, int? toPattern = null)
+        private double BackPropagateForPatterns(Vector<double>[][] patterns, double learningRate, LossType lossType, Metrics metrics, uint fromPattern = 0, uint? toPattern = null)
         {
-            toPattern ??= patterns.GetLength(0);
+            toPattern ??= (uint)patterns.Length;
 
-            if (toPattern > patterns.GetLength(0))
-            {
-                throw new Exception("ToPattern can\' be bigger than patterns num");
-            }
+            if (learningRate <= 0) throw new Exception("LearingRate must be greater than zero");
+
+            if (toPattern > patterns.Length) throw new Exception("ToPattern can\'t be bigger than patternsNum");
+
+            if (fromPattern >= toPattern) throw new Exception("ToPattern must be greater than fromPattern");
 
             Clear();
 
@@ -235,7 +245,7 @@ namespace AI
             double correctNum = 0;
 
             int patternNum2 = 0;
-            for (int patternNum = fromPattern; patternNum < toPattern; patternNum++, patternNum2++)
+            for (int patternNum = (int)fromPattern; patternNum < toPattern; patternNum++, patternNum2++)
             {
                 Vector<double> outputs = Update(patterns[patternNum][0]);
 
@@ -279,7 +289,7 @@ namespace AI
             }
 
             patternNum2 = 0;
-            for (int patternNum = fromPattern; patternNum < toPattern; patternNum++, patternNum2++)
+            for (uint patternNum = fromPattern; patternNum < toPattern; patternNum++, patternNum2++)
             {
                 for (int i = 1; i < Layers.Count; i++)
                 {
@@ -297,24 +307,30 @@ namespace AI
                 return (double)(errorSum / (toPattern - fromPattern));
             }
 
-            throw new Exception();
+            throw new NotImplementedException();
         }
 
-        public double GetAccuracy(Vector<double>[][] patterns, int fromPattern = 0, int? toPattern = null)
+        public double GetAccuracy(Vector<double>[][] patterns, uint fromPattern = 0, uint? toPattern = null)
         {
             // One-hot encoding only
 
+            toPattern ??= (uint)patterns.Length;
+
+            if (toPattern > patterns.Length) throw new Exception("ToPattern can\'t be bigger than patternsNum");
+
+            if (fromPattern >= toPattern) throw new Exception("ToPattern must be greater than fromPattern");
+
             Clear();
 
-            toPattern ??= patterns.GetLength(0);
-
             int correctNum = 0;
-            for (int patternNum = fromPattern; patternNum < toPattern; patternNum++)
+            for (int patternNum = (int)fromPattern; patternNum < toPattern; patternNum++)
             {
                 if (Update(patterns[patternNum][0]).MaximumIndex() == patterns[patternNum][1].MaximumIndex())
                 {
                     correctNum++;
                 }
+
+                if (patternNum % 10000 == 0) Console.WriteLine(patternNum);
 
                 Clear();
             }
@@ -324,7 +340,11 @@ namespace AI
 
         public double GetError(Vector<double>[][] patterns, LossType lossType, int fromPattern = 0, int? toPattern = null)
         {
-            toPattern ??= patterns.GetLength(0);
+            toPattern ??= patterns.Length;
+
+            if (toPattern > patterns.Length) throw new Exception("ToPattern can\'t be bigger than patternsNum");
+
+            if (fromPattern >= toPattern) throw new Exception("ToPattern must be greater than fromPattern");
 
             Clear();
 
@@ -355,7 +375,6 @@ namespace AI
             {
                 layers = Layers.Select((item, index) => new
                 {
-                    isInputLayer = index == 0,
                     weights = item.Weights.ToArray(),
                     biases = item.Biases.ToArray(),
                     activationType = item.LayerActivationType

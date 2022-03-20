@@ -7,14 +7,14 @@ namespace AI
     {
         public class Layer
         {
-            protected internal Matrix<double> Weights { get; set; }
-            protected internal Vector<double> Biases { get; set; }
-            protected internal Vector<double> Outputs { get; set; }
+            internal Matrix<double> Weights { get; set; }
+            internal Vector<double> Biases { get; set; }
+            internal Vector<double> Outputs { get; set; }
             // Diagonal matrix
-            protected internal List<Matrix<double>> DNodes { get; set; }
-            protected internal List<Matrix<double>> DWeights { get; set; }
-            protected internal List<Vector<double>> DeltaNodes { get; set; }
-            protected internal ActivationType LayerActivationType { get; set; }
+            internal List<Matrix<double>> DNodes { get; set; }
+            internal List<Matrix<double>> DWeights { get; set; }
+            internal List<Vector<double>> DeltaNodes { get; set; }
+            internal ActivationType LayerActivationType { get; set; }
 
             public int NeuronsNumber
             {
@@ -31,14 +31,14 @@ namespace AI
                 }
             }
 
-            public Layer(int neuronsNumber, int lastLayerNeuronsNumber, ActivationType activationType, Normal? weightsDistribution = null, Normal? biasesDistribution = null)
+            public Layer(uint neuronsNumber, uint lastLayerNeuronsNumber, ActivationType activationType, Normal? weightsDistribution = null, Normal? biasesDistribution = null)
             {
                 Random rnd = new Random();
                 weightsDistribution ??= new Normal(0, 1) { RandomSource = rnd };
                 biasesDistribution ??= new Normal(0, 0) { RandomSource = rnd };
-                Weights = _m.Random(neuronsNumber, lastLayerNeuronsNumber, weightsDistribution);
-                Biases = _v.Random(neuronsNumber, biasesDistribution);
-                Outputs = _v.Dense(neuronsNumber);
+                Weights = _m.Random((int)neuronsNumber, (int)lastLayerNeuronsNumber, weightsDistribution);
+                Biases = _v.Random((int)neuronsNumber, biasesDistribution);
+                Outputs = _v.Dense((int)neuronsNumber);
                 DNodes = new();
                 DWeights = new();
                 DeltaNodes = new();
@@ -48,6 +48,8 @@ namespace AI
 
             public Layer(double[,] weights, double[] biases, ActivationType activationType)
             {
+                if (weights.GetLength(0) != biases.Length) throw new Exception("Neurons in weights must be equal to neurons in biases");
+
                 Weights = _m.DenseOfArray(weights);
                 Biases = _v.DenseOfArray(biases);
                 Outputs = _v.Dense(NeuronsNumber);
@@ -60,13 +62,8 @@ namespace AI
 
             public Vector<double> Update(Vector<double> inputs)
             {
-                Outputs = _v.Dense(NeuronsNumber);
-
-                DNodes.Add(_m.Dense(NeuronsNumber, NeuronsNumber));
-
                 Outputs = Activate.Default(Weights * inputs + Biases, LayerActivationType);
-
-                DNodes[DNodes.Count - 1] = Activate.Derivative(Outputs, LayerActivationType);
+                DNodes.Add(Activate.Derivative(Outputs, LayerActivationType));
 
                 return Outputs;
             }
@@ -99,27 +96,8 @@ namespace AI
                     }
                 }
             }
-
-            public override string ToString()
-            {
-                string str = "";
-
-                for (int i = 0; i < NeuronsNumber; i++)
-                {
-                    string _weights = "(";
-                    for (int j = 0; j < LastLayerNeuronsNumber; j++)
-                    {
-                        _weights += $"{Weights[i, j]}, ";
-                    }
-                    _weights += ")";
-
-                    str += $"({_weights}, {Biases[i]}, {Outputs[i]})\n";
-                }
-
-                return str;
-            }
-
-            public static class Activation
+            
+            private static class Activation
             {
                 public static class Linear
                 {
@@ -241,6 +219,25 @@ namespace AI
                 TANH,
                 RELU,
                 SOFTMAX
+            }
+
+            public override string ToString()
+            {
+                string str = "";
+
+                for (int i = 0; i < NeuronsNumber; i++)
+                {
+                    string _weights = "(";
+                    for (int j = 0; j < LastLayerNeuronsNumber; j++)
+                    {
+                        _weights += $"{Weights[i, j]}, ";
+                    }
+                    _weights += ")";
+
+                    str += $"({_weights}, {Biases[i]}, {Outputs[i]})\n";
+                }
+
+                return str;
             }
         }
     }

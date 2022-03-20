@@ -195,12 +195,7 @@ namespace AI
 
             Random rnd = new();
 
-            NeuralNetwork nn = new(new List<uint> { 784, 128, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.SIGMOID, NeuralNetwork.Layer.ActivationType.SIGMOID });
-
-            Console.WriteLine("Accuracy measurement started");
-            nn.GetAccuracy(mnistFormattedTrainingSet);
-            Console.WriteLine("Accuracy measurement finished");
-
+            NeuralNetwork nn = new(new List<uint> { 784, 128, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.LEAKYRELU, NeuralNetwork.Layer.ActivationType.SOFTMAX });
 
             //nn.GetAccuracy(mnistFormattedTrainingSet);
 
@@ -208,7 +203,7 @@ namespace AI
 
             //Console.WriteLine(nn.Update(mnistFormattedTrainingSet[100, 0]));
 
-            nn.BackPropagateOnline(mnistFormattedTrainingSet, .0001, 50, NeuralNetwork.LossType.SQUAREERROR, NeuralNetwork.Metrics.ACCURACY, double.PositiveInfinity, 1);
+            nn.BackPropagateOnline(mnistFormattedTrainingSet, .001, 100, NeuralNetwork.LossType.SQUAREERROR, NeuralNetwork.Metrics.ACCURACY, double.PositiveInfinity, 1);
 
             //Console.WriteLine(nn.Update(mnistFormattedTrainingSet[100, 0]));
 

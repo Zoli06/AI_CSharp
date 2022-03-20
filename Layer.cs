@@ -79,6 +79,7 @@ namespace AI
                         case ActivationType.TANH: return Activation.TanH.Default(value);
                         case ActivationType.RELU: return Activation.ReLU.Default(value);
                         case ActivationType.SOFTMAX: return Activation.SoftMax.Default(value);
+                        case ActivationType.LEAKYRELU: return Activation.LeakyReLU.Default(value);
                         default: throw new NotImplementedException();
                     }
                 }
@@ -92,6 +93,7 @@ namespace AI
                         case ActivationType.TANH: return Activation.TanH.Derivative(value);
                         case ActivationType.RELU: return Activation.ReLU.Derivative(value);
                         case ActivationType.SOFTMAX: return Activation.SoftMax.Derivative(value);
+                        case ActivationType.LEAKYRELU: return Activation.LeakyReLU.Derivative(value);
                         default: throw new NotImplementedException();
                     }
                 }
@@ -210,6 +212,34 @@ namespace AI
                         return result;
                     }
                 }
+
+                public static class LeakyReLU
+                {
+                    private static double alpha = .1;
+
+                    public static Vector<double> Default(Vector<double> value)
+                    {
+                        Vector<double> result = _v.Dense(value.Count);
+
+                        for (int i = 0; i < value.Count; i++)
+                        {
+                            result[i] = Math.Max(value[i], value[i] * alpha);
+                        }
+                        return result;
+                    }
+
+                    public static Matrix<double> Derivative(Vector<double> value)
+                    {
+                        Matrix<double> result = _m.Dense(value.Count, value.Count);
+
+                        for (int i = 0; i < value.Count; i++)
+                        {
+                            result[i, i] = value[i] > 0.0 ? 1.0 : alpha;
+                        }
+
+                        return result;
+                    }
+                }
             }
 
             public enum ActivationType
@@ -218,7 +248,8 @@ namespace AI
                 SIGMOID,
                 TANH,
                 RELU,
-                SOFTMAX
+                SOFTMAX,
+                LEAKYRELU
             }
 
             public override string ToString()

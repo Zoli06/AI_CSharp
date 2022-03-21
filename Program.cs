@@ -198,7 +198,7 @@ namespace AI
 
             //Random rnd = new();
 
-            NeuralNetwork nn = new(new List<uint> { 784, 128, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.LEAKYRELU, NeuralNetwork.Layer.ActivationType.SOFTMAX });
+            NeuralNetwork nn = new(new List<uint> { 784, 128, 10 }, new List<NeuralNetwork.Layer.ActivationType> { NeuralNetwork.Layer.ActivationType.LINEAR, NeuralNetwork.Layer.ActivationType.LEAKYRELU, NeuralNetwork.Layer.ActivationType.SIGMOID });
 
             //nn.GetAccuracy(mnistFormattedTrainingSet);
 

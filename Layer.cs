@@ -1,5 +1,7 @@
 ﻿using MathNet.Numerics.Distributions;
 using MathNet.Numerics.LinearAlgebra;
+using System;
+using System.Collections.Generic;
 
 namespace AI
 {

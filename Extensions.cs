@@ -1,4 +1,6 @@
-﻿namespace AI
+﻿using System;
+
+namespace AI
 {
     public static class BooleanExtensions
     {
